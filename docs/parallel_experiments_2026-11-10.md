@@ -16,9 +16,9 @@
 | E26：E24 数据 + shape 特征 | CPU、内存 | E25 与来源审计；限制线程避免争用 | **已完成：**固定融合下降，叠加 E25 的微小增益不达门槛。 |
 | 数据与域差审计 | CPU/只读 | 所有训练线 | **已完成：**外部与官方字数接近，部分标点指纹不同；隐藏测试分布不能用 3 条预览行估计。 |
 | E27：分阶段解冻 ModernBERT | GPU 1 | 与 GPU 2 作业并行 | **已完成：**官方与外部两格相对 E24 均只 +0.003241，未过 +0.01 门槛；外部数据 × 解冻交互无正向证据。详见 [E27 报告](e27_headfirst_modernbert.md)。 |
-| E28：Qwen3-8B LoRA | 大显存 GPU 2 | 与 CPU 工作线并行 | **五折运行中：**资源测试门槛通过；Pod 重建后恢复相同依赖、模型与协议锁，2026-11-10 13:14 UTC 启动器进入第 1 折训练。尚无验证分数，Kaggle GPU 等效性未证实。详见 [E28 资源报告](e28_qwen8b_lora_feasibility.md)及[五折协议](e28_qwen8b_fivefold_protocol.md)。 |
+| E28：Qwen3-8B LoRA | 大显存 GPU 2 | 与 CPU 工作线并行 | **五折已完成：**单路 BA 0.344907；E24 固定融合 0.425000→0.434259，增量 +0.009259，未达预登记 +0.01，停止全量部署。E28 于 2026-11-10 18:11 UTC 释放 GPU2；Kaggle GPU 等效性仍未证实。[五折审计](e28_qwen8b_fivefold_results.md) |
 | E29：Qwen 外部来源敏感性 | CPU | E28 下载及来源审计 | **已完成：**固定 E24 融合 0.425000→0.423611，仅 2/5 折不降；不晋级全量训练或提交。详见 [E29 结果](e29_qwen_sensitivity_results.md)。 |
-| E30：Qwen3-Embedding-8B 监督分类 | 大显存 GPU，须与 E28 错峰 | E28 五折及只读审计 | 最终 v3 协议锁和官方 tokenizer 池化预检通过；Pod 重建后权重断点续传，守护队列等待完整哈希和 E28 释放 GPU2，然后自动执行资源门槛与五折。尚未运行 E30 GPU 资源测试，无分数。详见 [E30 设计](e30_supervised_embedding8b_design.md)。 |
+| E30：Qwen3-Embedding-8B 监督分类 | 大显存 GPU 2 | CPU/只读审计 | 最终 v3 协议锁、官方 tokenizer 池化预检和完整模型哈希通过；E28 释放 GPU2 后，**2026-11-10 18:12 UTC 已进入资源门槛测试**。尚无完成的资源报告或带标签五折分数。[E30 设计](e30_supervised_embedding8b_design.md) |
 | E31/E32：独立外部来源审计 | CPU/只读 | 其他各线 | **已完成：**两个来源严格准入均为 0 行；不纳入训练。详见 [E31](e31_independent_source_audit.md)、[E32](e32_willrice_raw_audit.md)。 |
 
 ## 叠加规则

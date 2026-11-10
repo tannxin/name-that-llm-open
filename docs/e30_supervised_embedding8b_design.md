@@ -1,6 +1,6 @@
 # E30：Qwen3-Embedding-8B 监督分类分支设计
 
-**状态：v3 预注册与 CPU 预检完成，固定权重快照正在下载；尚未训练或取得 E30 分数。** 与 [E28 生成基座 QLoRA](e28_qwen8b_lora_feasibility.md)分开编号、分开评估；不得拿 E28 的模型权重或资源数据充当 E30 结果。
+**状态：v3 预注册、CPU 预检和完整权重 SHA-256 校验通过；E28 于 2026-11-10 18:11 UTC 释放 GPU2，E30 于 18:12 UTC 进入折 1 资源门槛测试。尚无完成的 E30 资源报告或五折性能分数。** 与 [E28 生成基座 QLoRA](e28_qwen8b_fivefold_results.md)分开编号、分开评估；不得拿 E28 的模型权重或资源数据充当 E30 结果。
 
 ## 动机与证据
 
@@ -19,7 +19,7 @@ Qwen 的[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-8B)列出 
 
 全五折报告应包含：18 类 balanced accuracy、逐折和逐类召回、与 E24 固定融合的逐行互补性、按 120 个 prompt 配对 bootstrap 的区间、训练与推理资源。任何晋级都要相对**当时最好的固定候选**至少 +0.01、至少 4/5 折不降、无类召回下降 ≥0.05；单折只用于资源和机制检查，不能替代五折晋级判断。公榜仅在离线包通过 4,000 行完整推理及格式检查后做一次外部核验。
 
-## E30-A 预注册实现（尚无训练结果）
+## E30-A 预注册实现（尚无五折性能结果）
 
 代码为 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py)，机器配置为 [`configs/e30_qwen3_embedding8b.json`](../configs/e30_qwen3_embedding8b.json)。模型锁定 [Qwen 官方 Hugging Face 提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/commit/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af)；官方仓库标记 Apache-2.0，模型权重不并入本项目 MIT 代码仓库。四个权重分片、tokenizer、配置、权重索引和许可证的 SHA-256 均已与 Qwen 官方 ModelScope 镜像核对；脚本在 GPU 阶段逐项重算这些文件的 SHA-256，并检查 config 结构及 tokenizer EOS/pad 约定。E28 的生成模型与这些权重不通用。
 

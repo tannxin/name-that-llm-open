@@ -100,24 +100,24 @@ OOF、公榜和一次性留出结果不能互换。E24 外部回答的生成协�
 
 E24 仍缺可确证与目标完全同快照的 Qwen 类外部样本，不能因某来源自称“18 类干净”就把其标签当真。新来源须逐行核对实际服务模型、供应商/路由、提示正文或可追溯索引、生成设置、许可与近重复；不能拿依赖全部训练行的 `match_weight` 等字段挑选开发折样本。[E3](e3_public_data_access.md) · [E12](e12_external_data.md) · [E24 来源](e24_prvsiyan_source_audit.md) · [E29](e29_qwen_sensitivity_results.md) · [E31](e31_independent_source_audit.md) · [E32](e32_willrice_raw_audit.md)
 
-## 进行中：两个不同的 Qwen 8B 分支
+## 两个不同的 Qwen 8B 分支
 
 | 分支 | 到目前为止 | 尚不能声称 |
 | --- | --- | --- |
-| **E28：Qwen3-8B 生成模型的 18 类 QLoRA** | 固定权重快照及服务器 CPU 协议锁已校验；旧资源测试中单折 1 epoch 用时 1,091.47 秒、训练/推理峰值保留显存约 8.00/14.80 GiB，门槛通过。Pod 恢复后重建固定 Torch 2.6.0+cu118 环境；2026-11-10 13:14 UTC 五折启动器已进入第 1 折训练，GPU2 已实际加载模型。 | 尚无验证准确率或五折 OOF；服务器 RTX 3090 结果也不能证明 Kaggle 显卡可运行。 |
-| **E30：Qwen3-Embedding-8B 监督 LoRA** | 固定 model revision、镜像清单、tokenizer 池化位置及 v3 CPU 协议锁已核对；Pod 重建后保留已有分片并恢复下载。守护队列已启动，等待完整模型 SHA-256 校验和 E28 实际释放 GPU2，之后顺序运行资源门槛与五折。 | 模型下载尚未完成，也未运行 E30 GPU 资源试验或带标签验证；不能用冻结 4B 的旧分数代替。 |
+| **E28：Qwen3-8B 生成模型的 18 类 QLoRA** | 资源测试和官方开发集五折均完成并独立审计。单路 BA **0.344907**；E24 固定融合 0.425000 加 E28 后 **0.434259**，增量 **+0.009259**，低于预定 +0.01，停止全量部署。 | 这个 OOF 不是 Kaggle 分数；服务器 RTX 3090 也不能证明 Kaggle 显卡可运行。[五折结果](e28_qwen8b_fivefold_results.md) |
+| **E30：Qwen3-Embedding-8B 监督 LoRA** | 固定 model revision、镜像清单、tokenizer 池化位置及 v3 CPU 协议锁已核对；完整模型哈希通过，E28 释放 GPU2 后于 **2026-11-10 18:12 UTC** 进入资源测试。 | 资源门槛和带标签五折尚无完成报告或分数；不能用冻结 4B 的旧分数代替。 |
 
-这两个模型名称相近，但权重、目标和可比实验不同；E28 锁定的是 `Qwen/Qwen3-8B`，也不能与公开方案所用的 `Qwen3-8B-Base` 混为一谈。E30-A 是最后层单头分类，E30-B 才是预定的多层读出消融；两者都须用官方数据五折产生逐行 18 类 OOF 后，才能与 E24 比较。[E28 资源报告](e28_qwen8b_lora_feasibility.md) · [E30 设计](e30_supervised_embedding8b_design.md)
+这两个模型名称相近，但权重、目标和可比实验不同；E28 锁定的是 `Qwen/Qwen3-8B`，也不能与公开方案所用的 `Qwen3-8B-Base` 混为一谈。E30-A 是最后层单头分类，E30-B 才是预定的多层读出消融；E30 仍须产生官方数据五折逐行 18 类 OOF，才能与 E24 和已完成的 E28 比较。[E28 资源报告](e28_qwen8b_lora_feasibility.md) · [E28 五折](e28_qwen8b_fivefold_results.md) · [E30 设计](e30_supervised_embedding8b_design.md)
 
 ## 公开高分与往届方案：我们覆盖到了哪里
 
 | 公开来源与可借鉴机制 | 我们已做 | 仍缺什么 |
 | --- | --- | --- |
 | [本赛 0.666 V47](https://www.kaggle.com/code/lightningv08/0-666-qwen3-8-27b-lora-weighted-ensemble?scriptVersionId=365000313)：四视角稀疏、外部池、门控、排版、边际、ATLAS 与多 LLM 融合 | E0/E8/E20/E26/E33/E34、E11/E21/E22/E23、E3/E24 的单因素或小源对照 | 原版四视角与约 19 万行外部池的完整组合没有复刻；ATLAS、多层 8B/14B/27B LoRA 与总体集成也未做可比消融。来源条件 token 似然另列为后续实验。 |
-| [本赛 0.680 V63](https://www.kaggle.com/code/lightningv08/0-680-modernbert-lora-sparse-ensemble?scriptVersionId=366688484)及其引用的[0.679 分支](https://www.kaggle.com/code/concyclics/0-679?scriptVersionId=365653660)：Qwen3-Embedding-8B 五折监督 LoRA、多深度读出、原文与 prompt 中心化头 | E30-A 仅完成协议与下载预检；旧 E1 是冻结 4B，不是同一实验 | E30-A 性能五折、E30-B 多深度、可在无测试 `prompt_id` 下运行的软中心化、与 E24 的增量。公开 40% 混合权重不能照搬。 |
+| [本赛 0.680 V63](https://www.kaggle.com/code/lightningv08/0-680-modernbert-lora-sparse-ensemble?scriptVersionId=366688484)及其引用的[0.679 分支](https://www.kaggle.com/code/concyclics/0-679?scriptVersionId=365653660)：Qwen3-Embedding-8B 五折监督 LoRA、多深度读出、原文与 prompt 中心化头 | E30-A 已完成协议和模型哈希预检、进入资源测试；旧 E1 是冻结 4B，不是同一实验 | E30-A 性能五折、E30-B 多深度、可在无测试 `prompt_id` 下运行的软中心化、与 E24 的增量。公开 40% 混合权重不能照搬。 |
 | [SemEval-2024 Task 8 B 冠军](https://aclanthology.org/2024.semeval-1.212.pdf)：可信增量数据、类别加权、异构融合 | E3/E24 数据消融、E2a 使用过加权 CE、E7/E10/E16 固定融合 | E2a 没有同骨干同日程的加权/普通 CE 单因素对照，因此加权的独立增益未知；可信、覆盖全部 18 个精确版本的大规模外部数据也未取得。六分类准确率不能与本赛 BA 对比。 |
 | [SemEval 亚军](https://aclanthology.org/2024.semeval-1.63.pdf)：保留原文、先训头再解冻顶层 | E27 已在官方/外部两种数据条件下比较 | 相同配方未达晋级门槛，暂不重复扫参。 |
-| [DAIGT 冠军](https://www.kaggle.com/competitions/llm-detect-ai-generated-text/writeups/comprehensive-1st-place-write-up)、[代码](https://github.com/rbiswasfc/llm-detect-ai)：多来源生成数据、LoRA、token 似然与异构融合 | E24 小源、E14 DeBERTa、E28 资源测试、现有固定融合 | 来源条件 token 似然与多骨干 LoRA 尚未验证；其二分类 AUC 排名融合不能原样用于 18 类 BA。 |
+| [DAIGT 冠军](https://www.kaggle.com/competitions/llm-detect-ai-generated-text/writeups/comprehensive-1st-place-write-up)、[代码](https://github.com/rbiswasfc/llm-detect-ai)：多来源生成数据、LoRA、token 似然与异构融合 | E24 小源、E14 DeBERTa、E28 QLoRA 五折、现有固定融合 | 来源条件 token 似然与多骨干 LoRA 尚未验证；其二分类 AUC 排名融合不能原样用于 18 类 BA。 |
 | [DAIGT 亚军](https://www.kaggle.com/competitions/llm-detect-ai-generated-text/writeups/guanshuo-xu-2nd-place-solution-with-code-and-data)：外部预训练后目标域适配、域外验证 | E25-C 已做 ModernBERT 的严格五折两阶段对照，未达门槛；按 prompt 分组验证已固定 | 其他骨干和真正独立新来源尚未检验；不因旧配方失败就推断所有两阶段训练无效。 |
 
 上述本赛 0.666/0.680 是两份公开 Notebook 显示的**整体公榜**，不是各组件单独成绩；可见 21 秒预览运行只处理三行公开样例，不能代表完整隐藏推理。我们 E24 的 0.434 与已复核的 0.680 相差 0.246，但现有材料不能把差距拆给某项技巧。本赛仍未有最终私榜获奖方案。[原始复核](leader_methods_research_2026-11-06.md) · [0.680 更新复核](leader_methods_update_2026-11-10.md)
@@ -126,8 +126,8 @@ E24 仍缺可确证与目标完全同快照的 Qwen 类外部样本，不能因�
 
 | 优先级 | 可执行实验与对照 | 继续/停止条件 |
 | --- | --- | --- |
-| **P0-1：E28 性能五折** | **运行中。** 固定输入、GPU2 身份、CPU 协议锁与依赖已核验；后台串行完成 5 折并自动汇总 2,160 行完整 18 类 OOF，报告单路、逐折/逐类及与 E24 的预设固定融合。 | 资源已通过，但**没有性能分数**；按实测线性估计五折训练约 4.5 小时，连加载/验证预留 5–6 小时。无互补净收益即停止全量部署。 |
-| **P0-2：E30-A 监督 embedding** | **下载与守护队列运行中。** 完整模型四片权重与哈希通过后，等待 E28 释放 GPU2；先折 1 单 epoch、4,000 行单 adapter 推理的资源门槛，再按 v3 锁定配置做官方单源五折。与同一 E24 固定融合比较。 | 不完整快照、OOM、数值异常或 9 小时 Kaggle 预算不可信即暂停；单折分数不作为晋级证据。 |
+| **P0-1：E28 性能五折** | **已完成。** 2,160 行 18 类 OOF 与 E24 原参照均逐行核对；固定融合增量 +0.009259，5/5 折不降，最差单类 −0.041667。 | **未达预登记 +0.01 门槛，不晋级全量部署。** [独立审计](e28_qwen8b_fivefold_results.md) |
+| **P0-2：E30-A 监督 embedding** | **资源测试运行中。** 完整模型四片权重和哈希已通过，E28 已释放 GPU2；2026-11-10 18:12 UTC 按 v3 锁定配置开始单折资源门槛，之后才考虑官方单源五折并与 E24 固定融合比较。 | OOM、数值异常或 9 小时 Kaggle 预算不可信即暂停；单折分数不作为晋级证据。 |
 | **P1-1：E30-B 多深度读出** | 仅在 E30-A 单路或融合显示互补后，保持同一权重/折/数据/训练日程，单独改变预设读出层；软中心化须不依赖测试 `prompt_id`。 | 增量必须超过 A 而非仅超过旧 E24；不能照搬公开 Notebook 的层权重或 40% 融合权重。 |
 | **P1-2：可信新外部来源** | 寻找独立且逐行可验证的精确模型/路由/提示来源，优先补全缺失类别；按来源做 E0c 低成本单源增量、剔除来源敏感性与域差检查，再决定是否给 E28/E30 使用。 | E31/E32 严格准入 0 行；若无新证据，不把大汇总池当成高可信 18 类训练集。 |
 | **P1-3：最终互补融合与 Kaggle** | 只用对齐的 OOF 18 类分数，预先固定简单融合；若学习权重，必须在外层验证折以外的 prompt 内交叉拟合。通过后全量重训、离线重载、按真实 GPU 完整计时约 4,000 行并检查 `submission.parquet`。 | 参考实用门槛：相对当时最好固定候选 BA **至少 +0.01**、至少 **4/5 折不降**、任一类召回下降 **小于 0.05**，并报告按 prompt 配对区间。公榜只作少量外部核验。 |
@@ -135,4 +135,4 @@ E24 仍缺可确证与目标完全同快照的 Qwen 类外部样本，不能因�
 | **P2：长文本三格与其他 embedding** | 只对截断率/错误分析提示有效的新骨干补原 E5 三格；LLM2Vec-Llama、Qwen 0.6/4B 等监督 LoRA 需先核对许可、资源及相对 8B 的价值。 | 不为完成最初矩阵而机械遍历 11 种模型；先用低成本预检和明确的单因素假设。 |
 | **暂缓：复杂层级/相似度加权损失/测试硬匹配/27B** | 家族硬路由、软门控、SupCon、margin 已有负面或很弱的对照；[测试硬一对一匹配的公开反例](https://www.kaggle.com/competitions/name-that-llm/discussion/751802)显示本地大涨而公榜下降。 | 只有新的跨 prompt 稳定证据或强新骨干出现，才单独预登记；27B 另受显存与离线推理预算限制。 |
 
-所有晋级判断都要保留原始 E24 作锚点，记录逐折、逐类与按 prompt 配对的不确定性。多轮在同一 120 prompt 上选模会使最高 OOF 乐观；用过的 30 prompt 留出集不再用于筛选。即使 E28 在 RTX 3090 上通过资源门槛，其 14.80 GiB 推理峰值仍需在 Kaggle 实际 GPU 上复核。[并行安排](parallel_experiments_2026-11-10.md) · [E30 预注册](e30_supervised_embedding8b_design.md)
+所有晋级判断都要保留原始 E24 作锚点，记录逐折、逐类与按 prompt 配对的不确定性。多轮在同一 120 prompt 上选模会使最高 OOF 乐观；用过的 30 prompt 留出集不再用于筛选。E28 已因增量不足停止全量部署；如未来重新考虑，其服务器 14.80 GiB 推理峰值仍须在 Kaggle 实际 GPU 上复核。[并行安排](parallel_experiments_2026-11-10.md) · [E30 预注册](e30_supervised_embedding8b_design.md)
