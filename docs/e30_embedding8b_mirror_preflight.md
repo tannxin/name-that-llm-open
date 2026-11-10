@@ -1,6 +1,6 @@
 # E30 官方 Qwen3-Embedding-8B 镜像预检与获取通路
 
-**状态（2026-11-10）：只完成两站元数据和小文件的核对；未下载权重、未运行 GPU、未训练 E30。**
+**状态（2026-11-10）：已核对两站元数据，并在服务器下载和验证 11 MB tokenizer 与两份小配置以完成 CPU 池化检查；未下载权重、未运行 GPU、未训练 E30。**
 
 E30-A 使用 [Qwen 官方 Hugging Face `Qwen/Qwen3-Embedding-8B`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/tree/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af) 的不可变提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`，镜像选择 [Qwen 官方 ModelScope 同名仓库](https://www.modelscope.cn/models/Qwen/Qwen3-Embedding-8B) 的 Git 提交 `fcd9221ff0c460fdd81bfd04f4bc5b014e58da5b`。两站均标 Apache-2.0。该仓库是 **embedding 模型**，不能与 E28 的 `Qwen/Qwen3-8B` 生成模型或 Kaggle 的 `8b-base` 混用。
 
@@ -12,7 +12,7 @@ ModelScope 提交由官方仓库的 `git ls-remote` 解析得出。已验证文�
 
 修订后的独立下载脚本 `check --verify-hf` 已在本地实际运行通过，输出两站固定提交、9 个匹配文件、合计 15,146,107,275 字节，并明确标记 `weights_downloaded: false`。该检查不代表权重已在服务器落盘。
 
-服务器上也已运行不取权重的 `check`：固定 ModelScope 提交返回 9 个匹配文件，合计 15,146,107,275 字节，`weights_downloaded: false`。服务器可以访问该镜像的元数据；E28 大文件下载期间仍不启动 E30 大文件下载。
+服务器上也已运行不取权重的 `check`：固定 ModelScope 提交返回 9 个匹配文件，合计 15,146,107,275 字节，`weights_downloaded: false`。随后显式运行 `tokenizer-smoke`，只获取 `config.json`、`tokenizer_config.json`、`tokenizer.json`，逐项 SHA-256 通过；官方 tokenizer 实际追加的 `<|endoftext|>` ID 151643 在 attention mask 中为 1，符合 E30 末位池化规则。服务器可以访问该镜像；E28 大文件下载期间仍不启动 E30 大文件下载。
 
 | 文件 | 字节数 | SHA-256 |
 | --- | ---: | --- |
@@ -32,11 +32,12 @@ ModelScope 提交由官方仓库的 `git ls-remote` 解析得出。已验证文�
 
 ## 运行步骤
 
-[`download_e30_qwen3_embedding_mirror.py`](../download_e30_qwen3_embedding_mirror.py) 与 E28 下载脚本完全独立。下面的第一条命令仅请求 ModelScope 元数据；`--verify-hf` 还会请求 Hugging Face 固定提交元数据和 4 个小文件，总传输量低于 50 KiB。**只有显式 `download` 子命令会下载权重**。
+[`download_e30_qwen3_embedding_mirror.py`](../download_e30_qwen3_embedding_mirror.py) 与 E28 下载脚本完全独立。下面的第一条命令仅请求 ModelScope 元数据；`--verify-hf` 还会请求 Hugging Face 固定提交元数据和 4 个小文件，总传输量低于 50 KiB。`tokenizer-smoke` 只取得约 11 MB 的 tokenizer 和小配置并做 CPU 检查。**只有显式 `download` 子命令会下载权重**。
 
 ```bash
 python download_e30_qwen3_embedding_mirror.py check
 python download_e30_qwen3_embedding_mirror.py check --verify-hf
+python download_e30_qwen3_embedding_mirror.py tokenizer-smoke
 python download_e30_qwen3_embedding_mirror.py download \
   --model-dir data/models/qwen3-embedding-8b-1d8ad4c --max-workers 3
 ```

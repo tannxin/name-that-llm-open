@@ -299,6 +299,8 @@ def resource(args: argparse.Namespace) -> None:
     del model, optimizer, scheduler, scaler
     gc.collect()
     torch.cuda.empty_cache()
+    # Measure inference peak from the start of adapter reload.
+    torch.cuda.reset_peak_memory_stats(0)
 
     reload_started = time.perf_counter()
     model = make_base_model(args.model_dir)
@@ -306,7 +308,6 @@ def resource(args: argparse.Namespace) -> None:
     model = PeftModel.from_pretrained(model, adapter_dir, is_trainable=False)
     model.eval()
     reload_seconds = time.perf_counter() - reload_started
-    torch.cuda.reset_peak_memory_stats(0)
     # Repetition tests batch/sequence throughput only; no label or accuracy is read.
     inference_texts = [texts[index % len(texts)] for index in range(4000)]
     inference_started = time.perf_counter()

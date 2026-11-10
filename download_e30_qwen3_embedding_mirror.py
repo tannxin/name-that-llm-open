@@ -3,6 +3,7 @@
 
 ``check`` reads metadata only. ``check --verify-hf`` additionally fetches four
 small Hugging Face files (under 50 KiB total) and the pinned tree metadata.
+``tokenizer-smoke`` downloads only the pinned tokenizer and two small configs.
 Only the explicit ``download`` command transfers weight shards. No GPU is used.
 """
 
@@ -230,6 +231,9 @@ def main() -> None:
     check = stages.add_parser("check", help="Metadata only; no weight transfer")
     check.add_argument("--verify-hf", action="store_true",
                        help="Also read HF pinned tree and four small files (<50 KiB)")
+    smoke = stages.add_parser("tokenizer-smoke", help="Fetch 11 MB tokenizer/config only and test E30 pooling token")
+    smoke.add_argument("--model-dir", type=Path,
+                       default=Path("data/models/qwen3-embedding-8b-1d8ad4c"))
     download = stages.add_parser("download", help="Explicitly fetch and verify the pinned mirror")
     download.add_argument("--model-dir", type=Path,
                           default=Path("data/models/qwen3-embedding-8b-1d8ad4c"))
@@ -247,6 +251,22 @@ def main() -> None:
         if args.verify_hf:
             result.update(verify_hf_small_files_and_tree())
         print(json.dumps(result, indent=2), flush=True)
+        return
+    if args.stage == "tokenizer-smoke":
+        if shutil.disk_usage(existing_ancestor(args.model_dir)).free < 100 * 1024**2:
+            raise OSError("Insufficient disk space for E30 tokenizer smoke test")
+        args.model_dir.mkdir(parents=True, exist_ok=True)
+        for name in ("config.json", "tokenizer_config.json", "tokenizer.json"):
+            download_one((args.model_dir, name, manifest[name]))
+        from run_e30_supervised_embedding8b import load_tokenizer
+
+        tokenizer = load_tokenizer(args.model_dir)
+        sample = tokenizer("E30 tokenizer check", add_special_tokens=True)
+        print(json.dumps({"stage": "tokenizer_smoke", "model_id": MODEL_ID,
+                          "hf_revision": HF_REVISION, "modelscope_revision": MS_REVISION,
+                          "pooling_token_id": sample["input_ids"][-1],
+                          "pooling_token_attended": sample["attention_mask"][-1] == 1,
+                          "weight_shards_downloaded_by_command": False}, indent=2), flush=True)
         return
     if not 1 <= args.max_workers <= 5:
         raise ValueError("--max-workers must be in 1..5")

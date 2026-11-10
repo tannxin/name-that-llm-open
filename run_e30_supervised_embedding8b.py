@@ -33,6 +33,8 @@ from run_style import load_e0_split
 
 
 CONFIG_PATH = Path(__file__).with_name("configs") / "e30_qwen3_embedding8b.json"
+SCRIPT_PATH = Path(__file__).resolve()
+PROTOCOL_VERSION = 3
 SHARDS = tuple(f"model-{number:05d}-of-00004.safetensors" for number in range(1, 5))
 REQUIRED_MODEL_FILES = (
     "LICENSE", "config.json", "model.safetensors.index.json",
@@ -111,7 +113,9 @@ def lock_input(args, cfg: dict) -> dict:
     lock = read_json(path)
     expected = {
         "experiment": cfg["experiment"],
+        "protocol_version": PROTOCOL_VERSION,
         "config_sha256": sha256(CONFIG_PATH),
+        "script_sha256": sha256(SCRIPT_PATH),
         "train_sha256": sha256(args.train),
         "e0_manifest_sha256": sha256(args.e0_dir / "split_manifest.csv"),
         "e0_oof_sha256": sha256(args.e0_dir / "oof_predictions.csv"),
@@ -131,7 +135,9 @@ def preflight(args) -> None:
     report = {
         "experiment": cfg["experiment"],
         "stage": "protocol_lock_before_validation",
+        "protocol_version": PROTOCOL_VERSION,
         "config_sha256": sha256(CONFIG_PATH),
+        "script_sha256": sha256(SCRIPT_PATH),
         "train_sha256": sha256(args.train),
         "e0_manifest_sha256": sha256(args.e0_dir / "split_manifest.csv"),
         "e0_oof_sha256": sha256(args.e0_dir / "oof_predictions.csv"),
@@ -242,9 +248,15 @@ def load_tokenizer(model_dir: Path):
         padding_side="right")
     if tokenizer.pad_token_id is None or tokenizer.eos_token_id is None:
         raise ValueError("Pinned embedding tokenizer needs pad and EOS tokens")
+    # Qwen's embedding tokenizer appends <|endoftext|> for pooling. Its
+    # configured eos_token is <|im_end|>, a different token.
+    pool_token_id = tokenizer.convert_tokens_to_ids("<|endoftext|>")
     sample = tokenizer("E30 tokenizer check", add_special_tokens=True)
-    if sample["input_ids"][-1] != tokenizer.eos_token_id:
-        raise ValueError("Pinned tokenizer must append EOS before last-token pooling")
+    if (pool_token_id != 151643 or tokenizer.pad_token_id != pool_token_id
+            or tokenizer.eos_token_id != 151645
+            or sample["input_ids"][-1] != pool_token_id
+            or sample["attention_mask"][-1] != 1):
+        raise ValueError("Pinned tokenizer must append an attended <|endoftext|> pooling token")
     return tokenizer
 
 
@@ -460,6 +472,8 @@ def resource(args) -> None:
     del model
     gc.collect()
     torch.cuda.empty_cache()
+    # Capture adapter reload transients as well as the 4,000 forward passes.
+    reset_cuda_peak_stats()
     reload_start = time.perf_counter()
     model = reload_model(args.model_dir, resource_dir, cfg)
     reload_seconds = time.perf_counter() - reload_start
@@ -468,7 +482,6 @@ def resource(args) -> None:
     source = train_frame["text"].tolist()
     inference_texts = [source[index % len(source)] for index in range(4000)]
     inference_loader = make_loader(inference_texts, None, tokenizer, cfg, shuffle=False)
-    reset_cuda_peak_stats()
     inference_start = time.perf_counter()
     scores = predict(model, inference_loader)
     inference_seconds = time.perf_counter() - inference_start
@@ -511,6 +524,8 @@ def resource(args) -> None:
     }
     write_new_json(args.output_dir / "resource_report.json", report)
     print(json.dumps({"gate": gate, "gate_passed": all(gate.values())}, indent=2))
+    if not report["gate_passed"]:
+        raise RuntimeError("E30 one-fold resource gate failed; see resource_report.json")
 
 
 def checked_resource(args, cfg: dict) -> dict:
@@ -552,10 +567,11 @@ def fit_fold(args) -> None:
     del model
     gc.collect()
     torch.cuda.empty_cache()
+    # Include validation-time adapter reload in the reported inference peak.
+    reset_cuda_peak_stats()
     model = reload_model(args.model_dir, fold_dir, cfg)
     validation = dev.iloc[valid_idx]
     valid_loader = make_loader(validation["text"].tolist(), None, tokenizer, cfg, shuffle=False)
-    reset_cuda_peak_stats()
     inference_start = time.perf_counter()
     scores = predict(model, valid_loader)
     inference_seconds = time.perf_counter() - inference_start
@@ -739,7 +755,7 @@ def main() -> None:
         stage = stages.add_parser(name)
         stage.add_argument("--train", type=Path, default=Path("data/train.csv"))
         stage.add_argument("--e0-dir", type=Path, default=Path("outputs/e0_tfidf_svm"))
-        stage.add_argument("--output-dir", type=Path, default=Path("outputs/e30_qwen3_embedding8b_v2"))
+        stage.add_argument("--output-dir", type=Path, default=Path("outputs/e30_qwen3_embedding8b_v3"))
         if name in ("resource", "fit-fold"):
             stage.add_argument("--model-dir", type=Path, required=True,
                                help="Local official embedding snapshot; no download is performed")
