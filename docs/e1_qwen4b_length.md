@@ -15,7 +15,7 @@ The server run used physical GPU 2, batch size 2, PyTorch 2.6.0+cu118, and the e
 Reproduce with the existing project environment on the experiment server:
 
 ```bash
-CUDA_VISIBLE_DEVICES=2 /root/namethatllm-e1-venv2/bin/python run_frozen_embeddings.py \
+CUDA_VISIBLE_DEVICES=2 python run_frozen_embeddings.py \
   --models qwen3-embedding-4b \
   --model-revision 5cf2132abc99cad020ac570b19d031efec650f2b \
   --qwen-max-length 512 --batch-size 2 --device cuda:0 \

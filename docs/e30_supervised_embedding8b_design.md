@@ -25,14 +25,18 @@ Qwen 的[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-8B)列出 
 
 先在**任何带标签验证前**运行轻量 `preflight`，将官方训练哈希、E0 manifest/OOF 哈希和机器配置哈希写入 `outputs/e30_qwen3_embedding8b_v2/protocol_lock.json`。早期预检的 v1 配置锁保留作审计，审查后修订的 v2 配置已独立通过本地预检，不能混用。2026-11-10 的本地静态检查已确认 2,699 官方行、150 个 prompt、开发集 2,160 行/120 prompt、每折训练 1,728 行/96 prompt、验证 432 行/24 prompt；未加载 E30 模型、未测 E30 准确率。配置锁定 seed 42、256 token、batch 1、累积 8、3 epoch、LoRA r16/alpha32、普通交叉熵，最终 epoch 一次验证；不选择最佳 epoch 或阈值。
 
+同一 v2 配置和脚本已在服务器完成 CPU-only `preflight`，生成独立的 `protocol_lock.json`；报告中官方训练、E0 manifest 和 E0 OOF 哈希与预注册值一致，开发分区为 2,160 行/120 prompt，五折各 432 行。此步骤没有加载 E30 权重、使用 GPU 或计算验证准确率。
+
 模型快照获取须使用上述**完整提交哈希**，保存至本地目录。训练环境按配置固定依赖版本，并在确认显卡空闲后只暴露一张 RTX 3090。资源阶段只训练折 1 的训练侧一个 epoch，随后重新加载 adapter，使用训练侧回答重复构成 4,000 条**无标签代理文本**测试单 adapter 的完整推理吞吐。计划中的 Kaggle 部署以一个全量训练 adapter 推理；五折 adapter 仅用于开发 OOF，若日后改用五折集成，必须另测约五次加载和五倍前向的完整包。资源报告同时记录该五折时间估计，但它不证明 Kaggle 隐藏测试耗时。资源门槛为训练峰值保留显存 <22 GiB、至少 95% 计划优化器更新成功、单 epoch ≤1 小时、外推 3 epoch ≤3 小时、单 adapter 4,000 条推理 ≤3 小时；失败即停止。不能把这一折的结果称为五折提升。
+
+GPU 命令在逐文件重算完整模型哈希后、加载模型前再次通过 `nvidia-smi` 核对指定的**物理 GPU UUID**：须为 RTX 3090、已用显存 ≤256 MiB、利用率 0%、无计算进程；随后确认 PyTorch 仅识别该一张 RTX 3090 且空闲显存 ≥22 GiB。任何条件不满足即停止。CPU-only `preflight` 不查询 GPU。
 
 官方镜像的逐文件核对与显式下载命令见 [E30 权重预检](e30_embedding8b_mirror_preflight.md)。E28 大文件下载期间不启动 E30 大文件下载。
 
 ```bash
 python run_e30_supervised_embedding8b.py preflight
-CUDA_VISIBLE_DEVICES=<idle-3090-index> python run_e30_supervised_embedding8b.py resource --model-dir data/models/qwen3-embedding-8b-1d8ad4c
-CUDA_VISIBLE_DEVICES=<idle-3090-index> python run_e30_supervised_embedding8b.py fit-fold --fold 1 --model-dir data/models/qwen3-embedding-8b-1d8ad4c
+CUDA_VISIBLE_DEVICES=<idle-3090-GPU-UUID> python run_e30_supervised_embedding8b.py resource --model-dir data/models/qwen3-embedding-8b-1d8ad4c
+CUDA_VISIBLE_DEVICES=<idle-3090-GPU-UUID> python run_e30_supervised_embedding8b.py fit-fold --fold 1 --model-dir data/models/qwen3-embedding-8b-1d8ad4c
 # 折 1 机制检查通过后，以相同命令和设置运行 --fold 2、3、4、5。
 python run_e30_supervised_embedding8b.py summarize
 ```

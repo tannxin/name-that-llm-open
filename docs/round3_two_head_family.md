@@ -67,10 +67,10 @@
 
 ## 运行命令（已执行）
 
-先核对服务器训练脚本与本地修改版一致，再从服务器项目根目录使用空输出目录运行。使用物理 GPU 1；GPU 2 留给其他实验。
+当时使用物理 GPU 1、空输出目录运行。历史独立文件 `run_finetune_encoder_two_head.py` 未包含在公开仓库中；相同的 `--independent-family-head` 与 `--family-loss-weight` 选项已收录于公开的 `run_finetune_encoder.py`，可按下列命令重新训练。历史运行的精确源码文件及环境未归档，不能保证逐位复现原 OOF。
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 /root/namethatllm-e1-venv2/bin/python run_finetune_encoder_two_head.py \
+CUDA_VISIBLE_DEVICES=1 python run_finetune_encoder.py \
   --model-id FacebookAI/roberta-base \
   --revision e2da8e2f811d1448a5b465c236feacd80ffbac7b \
   --epochs 12 --pooling mean --max-length 256 --batch-size 16 --seed 42 \

@@ -18,7 +18,7 @@
 | E27：分阶段解冻 ModernBERT | GPU 1 | 与 GPU 2 作业并行 | **已完成：**官方与外部两格相对 E24 均只 +0.003241，未过 +0.01 门槛；外部数据 × 解冻交互无正向证据。详见 [E27 报告](e27_headfirst_modernbert.md)。 |
 | E28：Qwen3-8B LoRA | 大显存 GPU 2 | 与 CPU 工作线并行 | 官方 ModelScope 镜像的文件哈希与锁定 Hugging Face revision 一致；16.4 GB 快照在后台下载。下载、全文件 SHA-256 和 GPU 资源门槛通过后才做单折资源试验；目前无训练或验证分数。详见 [E28 预检](e28_qwen8b_lora_feasibility.md)。 |
 | E29：Qwen 外部来源敏感性 | CPU | E28 下载及来源审计 | **已完成：**固定 E24 融合 0.425000→0.423611，仅 2/5 折不降；不晋级全量训练或提交。详见 [E29 结果](e29_qwen_sensitivity_results.md)。 |
-| E30：Qwen3-Embedding-8B 监督分类 | 大显存 GPU，须与 E28 错峰 | E28 下载及只读审计 | 审查修订后的 v2 配置和本地数据预检已完成，E24 融合逐行复现 2160/2160；[官方镜像的文件哈希已核对](e30_embedding8b_mirror_preflight.md)。尚未下载该模型或启动 GPU 资源测试，无分数。详见 [E30 设计](e30_supervised_embedding8b_design.md)。 |
+| E30：Qwen3-Embedding-8B 监督分类 | 大显存 GPU，须与 E28 错峰 | E28 下载及只读审计 | 审查修订后的 v2 配置在本地和服务器完成 CPU 预检，E24 融合逐行复现 2160/2160；服务器已核对[官方镜像固定文件清单](e30_embedding8b_mirror_preflight.md)。尚未下载该模型或启动 GPU 资源测试，无分数。详见 [E30 设计](e30_supervised_embedding8b_design.md)。 |
 | E31/E32：独立外部来源审计 | CPU/只读 | 其他各线 | **已完成：**两个来源严格准入均为 0 行；不纳入训练。详见 [E31](e31_independent_source_audit.md)、[E32](e32_willrice_raw_audit.md)。 |
 
 ## 叠加规则

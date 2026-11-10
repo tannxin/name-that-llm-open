@@ -23,7 +23,7 @@ $$L=L_{18\text{类加权交叉熵}}+0.2\,[-\log q_{f(y)}].$$
 
 官方训练数据 2,699 行、150 个 prompt；仍只用原开发集 120 个 prompt、2,160 行及原五折 prompt 分组。30 个锁定保留 prompt 从未进入本实验的分词、训练、调参或评分。编码器固定为 `FacebookAI/roberta-base` revision `e2da8e2f811d1448a5b465c236feacd80ffbac7b`；mean pooling、dropout 0.1、最大 256 tokens、batch 16、12 epochs、seed 42、编码器学习率 `2e-5`、分类头 `1e-3`、AdamW、weight decay 0.01、10% warmup 后线性衰减、fp16。GradScaler 跳过优化器更新时不推进学习率调度器，只在第 12 轮评估。与 E2d-R 的 `run_config.json` 中模型、数据哈希、划分哈希、训练日程和随机种子逐项比对一致，唯一训练目标差别为家族损失。新实验没有保存五折权重，只保存折外预测、配置和指标；原 E2d-R 及当前提交包未改动。
 
-训练脚本为 [`run_finetune_encoder.py`](../run_finetune_encoder.py) 的 `--family-loss-weight 0.2`；服务器上以独立文件名 `run_finetune_encoder_family_aux.py` 运行，原服务器脚本未覆盖。完整输出在 Git 忽略的 `outputs/e13_roberta_family_aux_02/`；只读比较脚本为 [`analyze_family_aux.py`](../analyze_family_aux.py)，结果在 `outputs/e13_roberta_family_aux_02/fusion_analysis/`。比较前严格检查所有折外行的 `id,prompt_id,true_model,fold`、原训练配置及保存的 E10 预测能被原分数融合规则逐行重现。
+训练目标可用公开的 [`run_finetune_encoder.py`](../run_finetune_encoder.py) 的 `--family-loss-weight 0.2` 重新训练；历史运行使用了独立文件名 `run_finetune_encoder_family_aux.py`，该精确源码文件未归档，因此不能保证逐位复现原 OOF。下方命令使用仓库通用脚本中的对应选项。完整输出在 Git 忽略的 `outputs/e13_roberta_family_aux_02/`；只读比较脚本为 [`analyze_family_aux.py`](../analyze_family_aux.py)，结果在 `outputs/e13_roberta_family_aux_02/fusion_analysis/`。比较前严格检查所有折外行的 `id,prompt_id,true_model,fold`、原训练配置及保存的 E10 预测能被原分数融合规则逐行重现。
 
 ## 五折开发集结果
 

@@ -27,9 +27,9 @@ The DeBERTa leaf predictions are correct on 211 rows that E10 misses, but wrong 
 From the server project root, with the same data and split files present, install the tokenizer dependencies in the experiment environment and run in a **new empty output directory**:
 
 ```bash
-/root/namethatllm-e1-venv2/bin/python -m pip install sentencepiece==0.2.1 protobuf==6.33.0
+python -m pip install sentencepiece==0.2.1 protobuf==6.33.0
 HF_HUB_DISABLE_XET=1 HF_ENDPOINT=https://hf-mirror.com CUDA_VISIBLE_DEVICES=2 \
-  /root/namethatllm-e1-venv2/bin/python run_finetune_encoder.py \
+  python run_finetune_encoder.py \
   --model-id microsoft/deberta-v3-base \
   --revision 8ccc9b6f36199bec6961081d44eb72fb3f7353f3 \
   --epochs 12 --pooling mean --max-length 256 --batch-size 16 \

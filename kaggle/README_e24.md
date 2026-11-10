@@ -3,7 +3,7 @@
 Run the fixed full fit only after the E24 source audit and fivefold outputs are present:
 
 ```bash
-/root/namethatllm-e1-venv2/bin/python fit_e24_full_e0c.py
+python fit_e24_full_e0c.py
 python kaggle/prepare_e24_artifact.py
 python kaggle/make_e24_notebook.py
 ```

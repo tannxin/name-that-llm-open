@@ -9,11 +9,15 @@ tokenized for training or validation. E30-B and external data are separate studi
 from __future__ import annotations
 
 import argparse
+import csv
 import gc
 import importlib.metadata
 import json
 import math
+import os
 import random
+import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -183,12 +187,51 @@ def runtime_versions(cfg: dict) -> dict:
 
 
 def gpu_preflight(cfg: dict) -> None:
+    visible_uuid = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+    if not re.fullmatch(
+        r"GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}",
+        visible_uuid,
+    ):
+        raise ValueError("CUDA_VISIBLE_DEVICES must be one physical GPU UUID")
+
+    device_query = subprocess.run(
+        ["nvidia-smi", "--query-gpu=uuid,name,memory.used,utilization.gpu",
+         "--format=csv,noheader,nounits"],
+        check=True, capture_output=True, text=True, timeout=15,
+    )
+    devices = [[part.strip() for part in row]
+               for row in csv.reader(device_query.stdout.splitlines()) if row]
+    matches = [row for row in devices if len(row) == 4 and row[0] == visible_uuid]
+    if len(matches) != 1 or "RTX 3090" not in matches[0][1]:
+        raise ValueError("The visible UUID must identify one physical RTX 3090")
+    try:
+        used_mib = int(matches[0][2])
+        utilization = int(matches[0][3])
+    except ValueError as exc:
+        raise ValueError("Cannot verify RTX 3090 memory use and utilization") from exc
+    if used_mib > 256 or utilization != 0:
+        raise ValueError("RTX 3090 is not idle before E30 model load")
+
+    process_query = subprocess.run(
+        ["nvidia-smi", "-i", visible_uuid, "--query-compute-apps=pid",
+         "--format=csv,noheader"],
+        check=True, capture_output=True, text=True, timeout=15,
+    )
+    for line in process_query.stdout.splitlines():
+        pid = line.strip()
+        if not pid:
+            continue
+        if not pid.isdigit():
+            raise ValueError("Cannot verify GPU compute-process table")
+        raise ValueError("RTX 3090 already has a compute process")
+
     import torch
 
     if torch.cuda.device_count() != 1 or "RTX 3090" not in torch.cuda.get_device_name(0):
-        raise ValueError("Expose exactly one idle RTX 3090 via CUDA_VISIBLE_DEVICES")
-    if torch.cuda.mem_get_info(0)[0] < cfg["resource_gate"]["max_train_peak_gib"] * 2**30:
-        raise ValueError("Visible GPU does not have enough free memory for the E30 gate")
+        raise ValueError("Torch must see exactly one RTX 3090")
+    required_free_gib = max(22, cfg["resource_gate"]["max_train_peak_gib"])
+    if torch.cuda.mem_get_info(0)[0] < required_free_gib * 2**30:
+        raise ValueError("Visible RTX 3090 has less than 22 GiB free")
 
 
 def load_tokenizer(model_dir: Path):
@@ -375,12 +418,12 @@ def prepare_gpu(args):
     cfg = config()
     lock_input(args, cfg)
     versions = runtime_versions(cfg)
-    gpu_preflight(cfg)
     model_hashes = verify_model_dir(args.model_dir, cfg)
     _, dev, _, folds = official_development(args.train, args.e0_dir, cfg)
     tokenizer = load_tokenizer(args.model_dir)
     random.seed(cfg["seed"])
     np.random.seed(cfg["seed"])
+    gpu_preflight(cfg)
     import torch
     torch.manual_seed(cfg["seed"])
     torch.cuda.manual_seed_all(cfg["seed"])

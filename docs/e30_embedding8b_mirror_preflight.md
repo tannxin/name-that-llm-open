@@ -12,6 +12,8 @@ ModelScope 提交由官方仓库的 `git ls-remote` 解析得出。已验证文�
 
 修订后的独立下载脚本 `check --verify-hf` 已在本地实际运行通过，输出两站固定提交、9 个匹配文件、合计 15,146,107,275 字节，并明确标记 `weights_downloaded: false`。该检查不代表权重已在服务器落盘。
 
+服务器上也已运行不取权重的 `check`：固定 ModelScope 提交返回 9 个匹配文件，合计 15,146,107,275 字节，`weights_downloaded: false`。服务器可以访问该镜像的元数据；E28 大文件下载期间仍不启动 E30 大文件下载。
+
 | 文件 | 字节数 | SHA-256 |
 | --- | ---: | --- |
 | `LICENSE` | 11,343 | `832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e` |

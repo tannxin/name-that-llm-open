@@ -32,17 +32,17 @@
 
 训练进程的保存后测试、独立新进程的 `verify --device cpu` 均对三个包成功。保存前内存模型重复计算、重载模型重复计算的最大差在三个包里均为 **0**；每包三个固定文本的 argmax 在保存前后均一致。烟雾检查的最小 top-2 margin 分别是 0.308、0.421、0.786，均远高于观察到的浮点差。三个本地镜像再次按 `metadata.artifact_sha256` 逐文件读取、计算 SHA-256，与服务器包的权重及元数据哈希一致；没有只复制部分权重或仅凭文件大小判断完成。
 
-复现单个包的命令模板（`SEED` 与 `OUTPUT` 分别用上表对应值，输出必须是新目录）：
+复现单个包的命令模板（`SEED` 与 `OUTPUT` 分别用上表对应值，输出必须是新目录）。运行前将 `PRETRAINED_SNAPSHOT` 设为本地 `answerdotai/ModernBERT-base` revision `8949b909ec900327062f0ebf497f51aef5e6f0c8` 的快照目录：
 
 ```bash
 TORCHDYNAMO_DISABLE=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-CUDA_VISIBLE_DEVICES=2 /root/namethatllm-e1-venv2/bin/python fit_modernbert_full.py fit \
+CUDA_VISIBLE_DEVICES=2 python fit_modernbert_full.py fit \
   --seed SEED \
-  --pretrained-snapshot /root/.cache/huggingface/hub/models--answerdotai--ModernBERT-base/snapshots/8949b909ec900327062f0ebf497f51aef5e6f0c8 \
+  --pretrained-snapshot "$PRETRAINED_SNAPSHOT" \
   --output-dir outputs/OUTPUT
 ```
 
-独立重载命令：`/root/namethatllm-e1-venv2/bin/python fit_modernbert_full.py verify --package outputs/OUTPUT --device cpu`。
+独立重载命令：`python fit_modernbert_full.py verify --package outputs/OUTPUT --device cpu`。
 
 ## 外部验证限制
 

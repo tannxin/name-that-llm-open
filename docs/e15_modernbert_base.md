@@ -35,7 +35,7 @@ ModernBERT 单模型家族正确率为 **0.679630**，家族正确条件下精�
 
 ```bash
 TORCHDYNAMO_DISABLE=1 HF_ENDPOINT=https://hf-mirror.com CUDA_VISIBLE_DEVICES=1 \
-  /root/namethatllm-e1-venv2/bin/python run_finetune_encoder.py \
+  python run_finetune_encoder.py \
   --model-id answerdotai/ModernBERT-base \
   --revision 8949b909ec900327062f0ebf497f51aef5e6f0c8 \
   --epochs 12 --pooling mean --max-length 256 --batch-size 16 \
