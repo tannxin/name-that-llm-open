@@ -32,6 +32,7 @@ OOF、公榜和一次性留出结果不能互换。E24 外部回答的生成协�
 | E20 | 增加一块固定 shape 字符 TF-IDF | E0c 单路 0.3537；替换 E16 一路后 0.4134，仅比 E16 高 0.0042，未晋级。 |
 | E26 | 在 E24 外部数据上再次叠加 shape | 固定融合 0.4199，低于 E24 的 0.4250；与 E25-B 叠加仍无足够增益。 |
 | E33 | 复刻公开方案启发的四视角稀疏特征 | 修正预处理后本机五折单路 0.3602；替换 E16 稀疏路后 0.4032，低于 E16 的 0.4093，且仅 2/5 折不下降、最差类召回 −0.075。因本机 sklearn 与原环境不同，结果只作探索性；同配方不进入 GPU 复跑。 |
+| E34 | 保持 E24 审计外部行、权重和折不变，单独替换为 E33 四视角 | 本机稀疏单路 0.3699→0.3759；固定融合 0.4264→0.4181，仅 1/5 折不下降、最差类召回 −0.075。原 E24 本机重跑与服务器归档有 117 行预测差异，故仅作探索性负结果。 |
 
 冻结 embedding 的线性头对照如下。这里的“冻结”不能代表监督 LoRA 或全参数微调的潜力。[冻结模型明细](e1_frozen_embeddings.md) · [更多模型](e1_frozen_more.md) · [Qwen 4B 长度](e1_qwen4b_length.md)
 
@@ -111,7 +112,7 @@ E24 仍缺可确证与目标完全同快照的 Qwen 类外部样本，不能因�
 
 | 公开来源与可借鉴机制 | 我们已做 | 仍缺什么 |
 | --- | --- | --- |
-| [本赛 0.666 V47](https://www.kaggle.com/code/lightningv08/0-666-qwen3-8-27b-lora-weighted-ensemble?scriptVersionId=365000313)：四视角稀疏、外部池、门控、排版、边际、ATLAS 与多 LLM 融合 | E0/E8/E20/E26、E11/E21/E22/E23、E3/E24 的单因素或小源对照 | 原版四视角与约 19 万行外部池的完整组合没有复刻；ATLAS、多层 8B/14B/27B LoRA 与总体集成也未做可比消融。来源条件 token 似然另列为后续实验。 |
+| [本赛 0.666 V47](https://www.kaggle.com/code/lightningv08/0-666-qwen3-8-27b-lora-weighted-ensemble?scriptVersionId=365000313)：四视角稀疏、外部池、门控、排版、边际、ATLAS 与多 LLM 融合 | E0/E8/E20/E26/E33/E34、E11/E21/E22/E23、E3/E24 的单因素或小源对照 | 原版四视角与约 19 万行外部池的完整组合没有复刻；ATLAS、多层 8B/14B/27B LoRA 与总体集成也未做可比消融。来源条件 token 似然另列为后续实验。 |
 | [本赛 0.680 V63](https://www.kaggle.com/code/lightningv08/0-680-modernbert-lora-sparse-ensemble?scriptVersionId=366688484)及其引用的[0.679 分支](https://www.kaggle.com/code/concyclics/0-679?scriptVersionId=365653660)：Qwen3-Embedding-8B 五折监督 LoRA、多深度读出、原文与 prompt 中心化头 | E30-A 仅完成协议与下载预检；旧 E1 是冻结 4B，不是同一实验 | E30-A 性能五折、E30-B 多深度、可在无测试 `prompt_id` 下运行的软中心化、与 E24 的增量。公开 40% 混合权重不能照搬。 |
 | [SemEval-2024 Task 8 B 冠军](https://aclanthology.org/2024.semeval-1.212.pdf)：可信增量数据、类别加权、异构融合 | E3/E24 数据消融、E2a 使用过加权 CE、E7/E10/E16 固定融合 | E2a 没有同骨干同日程的加权/普通 CE 单因素对照，因此加权的独立增益未知；可信、覆盖全部 18 个精确版本的大规模外部数据也未取得。六分类准确率不能与本赛 BA 对比。 |
 | [SemEval 亚军](https://aclanthology.org/2024.semeval-1.63.pdf)：保留原文、先训头再解冻顶层 | E27 已在官方/外部两种数据条件下比较 | 相同配方未达晋级门槛，暂不重复扫参。 |

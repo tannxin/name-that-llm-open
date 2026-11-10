@@ -1,0 +1,20 @@
+{
+  "experiment": "e34_four_view_e24_same_source",
+  "stage": "local_e24_baseline_before_e34",
+  "protocol_lock_sha256": "4a31b2fe3206b0b3b958dbd3397c61a03ff67866c6191fd2c8dae7f9c00e49dc",
+  "python_version": "3.12.4",
+  "sklearn_version": "1.5.2",
+  "selected_external_rows": 3620,
+  "development_rows": 2160,
+  "prediction_mismatch_vs_archived_e24": 117,
+  "max_abs_margin_difference_vs_archived_e24": 0.13586368045043962,
+  "archived_e24_reproduced_locally": false,
+  "archived_e24_sparse_ba": 0.37268518518518523,
+  "local_e24_sparse_ba": 0.36990740740740735,
+  "archived_e24_fusion_ba": 0.42500000000000004,
+  "local_e24_fusion_ba": 0.4263888888888889,
+  "decision_scores_sha256": "d95857292308c4bc0cd5a0cf80050549d386b8b6ab6b082edf79e61bf8186b5c",
+  "oof_predictions_sha256": "3ed92131f87849c6593ff9a004f5b9ad9da56939468f90f444fd568171d9f597",
+  "holdout_scored": false,
+  "test_scored": false
+}

@@ -1,0 +1,45 @@
+{
+  "experiment": "e34_four_view_e24_same_source",
+  "stage": "five_fold_oof_analysis",
+  "status": "exploratory_environment_mismatch",
+  "protocol_lock_sha256": "4a31b2fe3206b0b3b958dbd3397c61a03ff67866c6191fd2c8dae7f9c00e49dc",
+  "baseline_metrics_sha256": "ca1f3b0931a2cf95ea8de3a2b7fe3b5306bdbcecd3b8b4bef945b9f3406e4932",
+  "python_version": "3.12.4",
+  "sklearn_version": "1.5.2",
+  "development_rows": 2160,
+  "development_prompts": 120,
+  "external_rows_per_fit": 3620,
+  "pooled_balanced_accuracy": {
+    "archived_e24_sparse": 0.37268518518518523,
+    "local_e24_sparse": 0.36990740740740735,
+    "e34_four_view_sparse": 0.37592592592592594,
+    "archived_e24_fusion": 0.42500000000000004,
+    "local_e24_fusion": 0.4263888888888889,
+    "e34_four_view_fusion": 0.4180555555555555
+  },
+  "same_source_fusion_delta": -0.00833333333333336,
+  "fusion_folds_non_decreasing": 1,
+  "worst_class_recall_delta": -0.07499999999999996,
+  "worst_class": "gpt-5.6-terra",
+  "paired_prompt_bootstrap_vs_local_e24": {
+    "difference": -0.00833333333333336,
+    "confidence_interval_95": [
+      -0.02175925925925931,
+      0.0050925925925925375
+    ],
+    "bootstrap_unit": "prompt_id",
+    "repeats": 20000,
+    "seed": 42
+  },
+  "gate": {
+    "local_e24_reproduced_archived": false,
+    "fusion_delta_at_least_0_01": false,
+    "at_least_4_of_5_folds_non_decreasing": false,
+    "no_class_recall_drop_at_least_0_05": false
+  },
+  "gate_passed": false,
+  "source_protocol_exploratory_due_to_global_official_length_statistics": true,
+  "weights_tuned": false,
+  "holdout_scored": false,
+  "test_scored": false
+}

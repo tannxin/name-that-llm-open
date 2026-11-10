@@ -1,0 +1,16 @@
+# E34: same-source E24 four-view sparse comparison (pre-registration)
+
+Status: locked before any E34 four-view fit or validation score. E34 is a local CPU experiment. The local Python/scikit-learn versions differ from the server environment used for E24; all new estimates are exploratory if the local E24 rerun changes even one archived prediction or a margin by more than `1e-5`.
+
+## Fixed data and order
+
+- Reuse exactly `run_e24_prvsiyan_external_ablation.select_external`: the SHA-locked raw Prvsiyan v9 `split=new` rows, accepted provenance manifest and report, first 250 of 300 prompts by the E24 salted hash, no backfill, and external sample weights totaling 24 per covered class. Verify selected row IDs and weights against E24's saved selection.
+- Reuse the official `train.csv` SHA-256 `40a22ce8d88c5f46feb4637a099db815bef5f713ffe53e89dbe1b7b21de77707`, the E0 120-prompt/2,160-row development set, and its five fixed prompt-group folds. Each fit uses 1,728 official training rows plus all selected E24 external rows; each validation uses only the 432 official rows in its fold. The 30-prompt holdout and hidden test are never fitted or scored.
+- First reproduce the archived E24 sparse and fixed-fusion predictions from saved score files. Then refit unchanged `run_combined.make_pipeline()` on the exact E24 data and weights in the local environment, saving all five OOF margins. Finish this baseline run and record prediction/margin disagreement with archived E24 before fitting any four-view model.
+- Only after the baseline report exists, fit the four-view model once per fold on those same training rows and weights. Use `run_e33_four_view_sparse.make_four_view_pipeline()` directly, including its corrected whole-span uppercase shape transform, frozen function-word vocabulary, four TF-IDF views and weights, and `LinearSVC(C=0.5, class_weight='balanced', dual=True, max_iter=5000, random_state=42)`. Do not change features, solver, data, weights, folds, or score normalization after seeing validation results.
+
+## Fixed comparisons and gate
+
+Report the local E24 rerun and E34 four-view standalone OOF balanced accuracy, five fold scores, and per-class recall. For the primary same-environment comparison, use the locked E24 fusion rule `row-z(sparse) + row-z(RoBERTa) + mean(row-z(ModernBERT seeds 42, 17, 73))`, substituting only the local E24 or E34 sparse stream. The RoBERTa and ModernBERT files are unchanged archived OOF scores. Verify that the archived E24 sparse stream reconstructs every saved E24 fixed-fusion prediction and BA `0.425` before fitting. Report archived E24 comparisons separately as diagnostics, not as the primary feature effect.
+
+The candidate gate requires all of: local E24 reproduces archived E24 predictions exactly and margins within `1e-5`; E34's fixed fusion improves pooled balanced accuracy over the local E24 fixed fusion by at least `+0.010`; at least four of five fold fusion BAs do not decrease; and no class recall drops by `0.05` or more. Include a 20,000-repeat prompt-paired bootstrap interval (seed 42) as a diagnostic, not a threshold. A failed gate or environment mismatch is a no-go for promotion. Existing external-source provenance caveats from E24 remain in force. No Kaggle submission or deployment decision is authorized by this local probe.
