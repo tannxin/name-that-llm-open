@@ -12,7 +12,7 @@ Qwen 的[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-8B)列出 
 
 ## 固定比较顺序
 
-1. **权重与资源门槛。** 先锁定官方 Hugging Face 或官方 ModelScope 的不可变 revision，核对配置、tokenizer、权重分片大小与哈希，记录许可证。服务器仅用空闲 RTX 3090 的隔离环境；先完成一个折的无标签前向和一个 epoch 吞吐测试，记录训练峰值显存及外推的五折/全量成本。另用 4,000 条固定无标签文本测完整推理，不以三条公开 Kaggle 样例计时。模型快照不完整、OOM、数值异常或推理预计超出 Kaggle 9 小时时，停止，不换模型或改变折号来补分。
+1. **权重与资源门槛。** 先锁定官方 Hugging Face 或官方 ModelScope 的不可变 revision，核对配置、tokenizer、权重分片大小与哈希，记录许可证。服务器仅用空闲 RTX 3090 的隔离环境；先完成一个折的无标签前向和一个 epoch 吞吐测试，记录训练峰值显存及外推的五折/全量成本。另用 4,000 条固定无标签文本测单 adapter 的完整推理，不以三条公开 Kaggle 样例计时。模型快照不完整、OOM、数值异常或推理预计超出 Kaggle 9 小时时，停止，不换模型或改变折号来补分。
 2. **最小监督基线 E30-A。** 只用官方训练集已固定的 120 个开发 prompt 与五折 GroupKFold，输入为原始回答文本，无测试 `prompt_id`、无聊天模板。LoRA 骨干接一个 18 类线性头，从最后非 padding token 读取最后层隐藏状态；分类标签顺序与 E0/E16 一致。先用折 1 检查训练与验证流程，再在资源允许时按同一设置完成五折 OOF。普通交叉熵、一个固定 seed、固定 epoch 和截断长度在首个带标签验证前写入机器配置；不按验证折选择最佳 epoch 或阈值。
 3. **只在 E30-A 有互补信号后测试 E30-B。** 保留同一权重快照、数据、折与优化日程，唯一新增少量预先固定层的可训练读出；先检查单路和与 E24 固定融合的净增量，再决定是否加入无需真实测试 prompt_id 的软中心化头。公开方案中的 40% 几何混合权重不能直接照搬到我们的 E24 分数。
 4. **再试 E24 外部数据。** 只有官方单源实验与资源检查完成后，才比较 E30-A/B 的官方训练与“官方＋E24 审计行”训练，外部类内总权重沿用 E24 的 0.25，不重新筛回答或按 OOF 改来源。报告来源依赖的长度/标点分布风险，不把外部数据上的开发提升视为独立测试提升。
@@ -21,11 +21,13 @@ Qwen 的[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-8B)列出 
 
 ## E30-A 预注册实现（尚无训练结果）
 
-代码为 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py)，机器配置为 [`configs/e30_qwen3_embedding8b.json`](../configs/e30_qwen3_embedding8b.json)。模型锁定 [Qwen 官方 Hugging Face 提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/commit/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af)；官方仓库标记 Apache-2.0，模型权重不并入本项目 MIT 代码仓库。脚本在 GPU 阶段核对四个权重分片和 tokenizer 的官方 SHA-256、config 结构、tokenizer EOS/pad 约定；只使用本地模型目录，不发起下载。E28 的生成模型与这些权重不通用。
+代码为 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py)，机器配置为 [`configs/e30_qwen3_embedding8b.json`](../configs/e30_qwen3_embedding8b.json)。模型锁定 [Qwen 官方 Hugging Face 提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/commit/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af)；官方仓库标记 Apache-2.0，模型权重不并入本项目 MIT 代码仓库。四个权重分片、tokenizer、配置、权重索引和许可证的 SHA-256 均已与 Qwen 官方 ModelScope 镜像核对；脚本在 GPU 阶段逐项重算这些文件的 SHA-256，并检查 config 结构及 tokenizer EOS/pad 约定。E28 的生成模型与这些权重不通用。
 
-先在**任何带标签验证前**运行轻量 `preflight`，将官方训练哈希、E0 manifest/OOF 哈希和机器配置哈希写入 `outputs/e30_qwen3_embedding8b/protocol_lock.json`。2026-11-10 的本地静态检查已确认 2,699 官方行、150 个 prompt、开发集 2,160 行/120 prompt、每折训练 1,728 行/96 prompt、验证 432 行/24 prompt；未加载 E30 模型、未测 E30 准确率。配置锁定 seed 42、256 token、batch 1、累积 8、3 epoch、LoRA r16/alpha32、普通交叉熵，最终 epoch 一次验证；不选择最佳 epoch 或阈值。
+先在**任何带标签验证前**运行轻量 `preflight`，将官方训练哈希、E0 manifest/OOF 哈希和机器配置哈希写入 `outputs/e30_qwen3_embedding8b_v2/protocol_lock.json`。早期预检的 v1 配置锁保留作审计，审查后修订的 v2 配置已独立通过本地预检，不能混用。2026-11-10 的本地静态检查已确认 2,699 官方行、150 个 prompt、开发集 2,160 行/120 prompt、每折训练 1,728 行/96 prompt、验证 432 行/24 prompt；未加载 E30 模型、未测 E30 准确率。配置锁定 seed 42、256 token、batch 1、累积 8、3 epoch、LoRA r16/alpha32、普通交叉熵，最终 epoch 一次验证；不选择最佳 epoch 或阈值。
 
-模型快照获取须使用上述**完整提交哈希**，保存至本地目录。训练环境按配置固定依赖版本，并在确认显卡空闲后只暴露一张 RTX 3090。资源阶段只训练折 1 的训练侧一个 epoch，随后重新加载 adapter，使用训练侧回答重复构成 4,000 条**无标签代理文本**测试完整推理吞吐。该代理只检验服务器资源，不证明 Kaggle 隐藏测试的耗时。资源门槛为训练峰值 <22 GiB、单 epoch ≤1 小时、外推 3 epoch ≤3 小时、4,000 条推理 ≤3 小时；失败即停止。不能把这一折的结果称为五折提升。
+模型快照获取须使用上述**完整提交哈希**，保存至本地目录。训练环境按配置固定依赖版本，并在确认显卡空闲后只暴露一张 RTX 3090。资源阶段只训练折 1 的训练侧一个 epoch，随后重新加载 adapter，使用训练侧回答重复构成 4,000 条**无标签代理文本**测试单 adapter 的完整推理吞吐。计划中的 Kaggle 部署以一个全量训练 adapter 推理；五折 adapter 仅用于开发 OOF，若日后改用五折集成，必须另测约五次加载和五倍前向的完整包。资源报告同时记录该五折时间估计，但它不证明 Kaggle 隐藏测试耗时。资源门槛为训练峰值保留显存 <22 GiB、至少 95% 计划优化器更新成功、单 epoch ≤1 小时、外推 3 epoch ≤3 小时、单 adapter 4,000 条推理 ≤3 小时；失败即停止。不能把这一折的结果称为五折提升。
+
+官方镜像的逐文件核对与显式下载命令见 [E30 权重预检](e30_embedding8b_mirror_preflight.md)。E28 大文件下载期间不启动 E30 大文件下载。
 
 ```bash
 python run_e30_supervised_embedding8b.py preflight
@@ -35,4 +37,4 @@ CUDA_VISIBLE_DEVICES=<idle-3090-index> python run_e30_supervised_embedding8b.py 
 python run_e30_supervised_embedding8b.py summarize
 ```
 
-每折单独保存 adapter、分类头、完整 18 类 logits、运行元数据和资源用量。`summarize` 只有五折齐全才运行；它先逐行重现 E24 固定融合，再以**预先固定的 1.0 分支权重**加上 E30 行标准化 logits，输出单路 BA、逐折/逐类召回、混淆矩阵、逐行互补数和按 prompt 配对 bootstrap 区间。晋级门槛基于 E24 作为当前固定参照：融合 BA 至少 +0.01、至少 4/5 折不降、任何类召回下降不得达到 0.05。若汇总时已有更好的固定候选，还需相对那个候选重核，不能仅凭对 E24 过线就晋级。
+每折单独保存 adapter、分类头、完整 18 类 logits、运行元数据和资源用量。`summarize` 只有五折齐全才运行；它先核对 E24 已审计 metrics、OOF 与五份来源分数的 SHA-256，再逐行重现 E24 固定融合；随后以**预先固定的 1.0 分支权重**加上 E30 行标准化 logits，输出单路 BA、逐折/逐类召回、混淆矩阵、逐行互补数和按 prompt 配对 bootstrap 区间。晋级门槛基于 E24 作为当前固定参照：融合 BA 至少 +0.01、至少 4/5 折不降、任何类召回下降不得达到 0.05。若汇总时已有更好的固定候选，还需相对那个候选重核，不能仅凭对 E24 过线就晋级。

@@ -40,3 +40,9 @@ ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namet
 ```
 
 完成信号为日志出现 `COMPLETE`，且 `data/models/qwen3-8b-b968826d/e28_mirror_manifest.json` 出现 `all_sha256_verified: true`（13 个运行文件）。只有此后再次检查 GPU2 空闲、运行 E28 资源脚本的 SHA-256 守卫通过，才可启动折 1 的单 epoch 资源试验；目前没有启动 GPU 作业。
+
+### 一次性资源测试接力（已设置，等待下载）
+
+[watch_e28_qwen3_resource.py](../watch_e28_qwen3_resource.py) 已作为后台 PID `1219155` 启动，通用脚本以 `--download-pid` 指定下载进程。它每 60 秒只读检查上述 `COMPLETE` 和 manifest；若下载进程提前退出或等待超过 4 小时，则写入 `WATCHER_ABORT` 并退出。完成后逐项核验固定 revision、13 个运行文件的 manifest，并调用 E28 `verify_model_dir` **从本地文件重新计算全部必需文件 SHA-256**。随后再次确认物理 GPU2 显存 ≤256 MiB、利用率 0、无 CUDA compute PID；任一检查失败即退出，不换 GPU、不改参数。资源入口本身还会在加载 CUDA 模型前再次核验文件哈希与可用显存。
+
+所有门槛均通过时，watcher 仅启动预登记折 1 的 1 epoch 和 4,000 行无标签推理，设置 `CUDA_VISIBLE_DEVICES=2` 与离线环境变量；不计算验证准确率、不启动五折或 E30。watcher 状态记录在 `outputs/e28_mirror_download/watcher.log`，资源子进程输出在同目录 `resource.log`，机器结果在 `outputs/e28_qwen8b_resource_mirror/resource_report.json`。部署后只读核查：watcher PID `1219155` 为运行状态，日志仅有 `WATCHER_START`；下载 PID `1217581` 仍运行，模型目录约 7.76 GB，GPU2 55 MiB、0%。**此时资源作业尚未启动。**

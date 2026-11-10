@@ -34,15 +34,21 @@ REQUIRED_MODEL_FILES = (
     "LICENSE", "config.json", "model.safetensors.index.json",
     "tokenizer.json", "tokenizer_config.json", *SHARDS,
 )
-# Official Hugging Face Xet SHA-256 values at the pinned commit. Small JSON files
-# are guarded by the immutable revision, structural checks, and recorded hashes.
+# Official Hugging Face files at the pinned commit, independently matched to
+# Qwen's ModelScope mirror. Weight oids are LFS SHA-256.
 EXPECTED_SHA256 = {
+    "LICENSE": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e",
+    "config.json": "dcccf7c7890c8debc4af8dace8d6acd8dd50bd56d50d4d8b60529381ba3de3d7",
+    "model.safetensors.index.json": "ceaf1429bfa18eecc75d079737e8d1fe8dc0627f5ec7e6a985514626d1ac6a77",
     "tokenizer.json": "83cdf8c3a34f68862319cb1810ee7b1e2c0a44e0864ae930194ddb76bb7feb8d",
+    "tokenizer_config.json": "2f58f4bbd7bbce15d683f525954ef3a92cd82f5e06415a9c513859bf8ab72436",
     SHARDS[0]: "99b343597fe840706146144699a8b9188dd3387e43eb61faf0231b70b249d451",
     SHARDS[1]: "dff635b0f6dbbaad2a2d633ef037ec0a39bc165cc1806c712fbd6fcbcb4526c0",
     SHARDS[2]: "30b1d4c53d84eb018f642cad7b373f0aabf79699872d8702c1f38577c0a59a2f",
     SHARDS[3]: "36cbc9c60375693629f25743c1e77ebb1724af58e671b2376463193c7fd21ef6",
 }
+EXPECTED_E24_METRICS_SHA256 = "301463b680bbf83a46bc106ff273e64db853358e131b29c40410a88f8770a557"
+EXPECTED_E24_OOF_SHA256 = "8230d7438eb6c0df7015edc61a54cf880904b85d1f8d599fd549a57e357b4448"
 
 
 def read_json(path: Path) -> dict:
@@ -66,6 +72,8 @@ def config() -> dict:
         raise ValueError("E30-A model revision changed")
     if value["folds"] != list(range(1, N_FOLDS + 1)):
         raise ValueError("E30-A fold list changed")
+    if value["deployment_model_count"] != 1:
+        raise ValueError("E30-A resource gate assumes one full-data deployment adapter")
     return value
 
 
@@ -314,9 +322,17 @@ def train(model, loader, cfg: dict, epochs: int) -> dict:
         losses.append(sum_loss / len(loader.dataset))
         print(f"E30 train epoch {epoch}/{epochs}: loss={losses[-1]:.6f}", flush=True)
     torch.cuda.synchronize(0)
+    planned_updates = updates_per_epoch * epochs
+    minimum_updates = math.ceil(
+        planned_updates * cfg["resource_gate"]["min_completed_optimizer_update_fraction"])
+    if completed_updates < minimum_updates:
+        raise FloatingPointError(
+            f"Only {completed_updates}/{planned_updates} optimizer updates completed; "
+            f"minimum is {minimum_updates}")
     return {"epochs": epochs, "train_seconds": time.perf_counter() - started,
             "epoch_loss": losses, "completed_optimizer_updates": completed_updates,
-            "skipped_optimizer_updates": skipped_updates}
+            "skipped_optimizer_updates": skipped_updates,
+            "planned_optimizer_updates": planned_updates}
 
 
 def predict(model, loader) -> np.ndarray:
@@ -371,6 +387,14 @@ def prepare_gpu(args):
     return cfg, versions, model_hashes, dev, folds, tokenizer
 
 
+def reset_cuda_peak_stats() -> None:
+    import torch
+
+    # Torch 2.6 requires an initialized allocator before resetting peak stats.
+    torch.empty(1, device="cuda:0")
+    torch.cuda.reset_peak_memory_stats(0)
+
+
 def resource(args) -> None:
     import torch
 
@@ -382,10 +406,11 @@ def resource(args) -> None:
     loader = make_loader(train_frame["text"].tolist(),
                          [target_map[value] for value in train_frame["model"]],
                          tokenizer, cfg, shuffle=True)
-    torch.cuda.reset_peak_memory_stats(0)
+    reset_cuda_peak_stats()
     model = build_model(args.model_dir, cfg)
     train_report = train(model, loader, cfg, epochs=1)
-    train_peak = torch.cuda.max_memory_allocated(0)
+    train_peak_allocated = torch.cuda.max_memory_allocated(0)
+    train_peak_reserved = torch.cuda.max_memory_reserved(0)
     resource_dir = args.output_dir / "resource_one_epoch"
     resource_dir.mkdir(parents=True, exist_ok=False)
     save_adapter_head(model, tokenizer, resource_dir)
@@ -400,16 +425,18 @@ def resource(args) -> None:
     source = train_frame["text"].tolist()
     inference_texts = [source[index % len(source)] for index in range(4000)]
     inference_loader = make_loader(inference_texts, None, tokenizer, cfg, shuffle=False)
-    torch.cuda.reset_peak_memory_stats(0)
+    reset_cuda_peak_stats()
     inference_start = time.perf_counter()
     scores = predict(model, inference_loader)
     inference_seconds = time.perf_counter() - inference_start
-    inference_peak = torch.cuda.max_memory_allocated(0)
+    inference_peak_allocated = torch.cuda.max_memory_allocated(0)
+    inference_peak_reserved = torch.cuda.max_memory_reserved(0)
     if scores.shape != (4000, len(LABELS)):
         raise ValueError("Resource inference row count changed")
     gate_cfg = cfg["resource_gate"]
     gate = {
-        "train_peak_under_limit": train_peak < gate_cfg["max_train_peak_gib"] * 2**30,
+        "train_peak_under_limit": train_peak_reserved < gate_cfg["max_train_peak_gib"] * 2**30,
+        "inference_peak_under_limit": inference_peak_reserved < gate_cfg["max_train_peak_gib"] * 2**30,
         "one_epoch_under_limit": train_report["train_seconds"] <= gate_cfg["max_one_epoch_seconds"],
         "projected_three_epochs_under_limit": train_report["train_seconds"] * cfg["epochs"] <= gate_cfg["max_projected_three_epoch_seconds"],
         "four_thousand_inference_under_limit": inference_seconds <= gate_cfg["max_four_thousand_inference_seconds"],
@@ -424,11 +451,17 @@ def resource(args) -> None:
         "training_rows": len(train_frame), "training_epochs": 1,
         **train_report,
         "projected_three_epoch_seconds": train_report["train_seconds"] * cfg["epochs"],
-        "train_peak_allocated_bytes": train_peak,
+        "train_peak_allocated_bytes": train_peak_allocated,
+        "train_peak_reserved_bytes": train_peak_reserved,
         "adapter_reload_seconds": reload_seconds,
         "unlabeled_inference_rows": len(inference_texts),
         "inference_seconds": inference_seconds,
-        "inference_peak_allocated_bytes": inference_peak,
+        "inference_peak_allocated_bytes": inference_peak_allocated,
+        "inference_peak_reserved_bytes": inference_peak_reserved,
+        "projected_five_fold_training_seconds": train_report["train_seconds"] * cfg["epochs"] * len(cfg["folds"]),
+        "projected_five_adapter_inference_seconds": (reload_seconds + inference_seconds) * len(cfg["folds"]),
+        "deployment_model_count": cfg["deployment_model_count"],
+        "five_adapter_kaggle_runtime_proven": False,
         "validation_accuracy_computed": False,
         "hidden_test_runtime_proven": False,
         "gate": gate, "gate_passed": all(gate.values()),
@@ -466,10 +499,11 @@ def fit_fold(args) -> None:
     loader = make_loader(train_frame["text"].tolist(),
                          [target_map[value] for value in train_frame["model"]],
                          tokenizer, cfg, shuffle=True)
-    torch.cuda.reset_peak_memory_stats(0)
+    reset_cuda_peak_stats()
     model = build_model(args.model_dir, cfg)
     train_report = train(model, loader, cfg, epochs=cfg["epochs"])
-    train_peak = torch.cuda.max_memory_allocated(0)
+    train_peak_allocated = torch.cuda.max_memory_allocated(0)
+    train_peak_reserved = torch.cuda.max_memory_reserved(0)
     fold_dir.mkdir(parents=True, exist_ok=False)
     save_adapter_head(model, tokenizer, fold_dir)
     del model
@@ -478,7 +512,7 @@ def fit_fold(args) -> None:
     model = reload_model(args.model_dir, fold_dir, cfg)
     validation = dev.iloc[valid_idx]
     valid_loader = make_loader(validation["text"].tolist(), None, tokenizer, cfg, shuffle=False)
-    torch.cuda.reset_peak_memory_stats(0)
+    reset_cuda_peak_stats()
     inference_start = time.perf_counter()
     scores = predict(model, valid_loader)
     inference_seconds = time.perf_counter() - inference_start
@@ -498,9 +532,11 @@ def fit_fold(args) -> None:
         "model_revision": cfg["model_revision"], "model_file_sha256": hashes,
         "packages": versions, "train_rows": len(train_idx),
         "validation_rows": len(valid_idx), **train_report,
-        "train_peak_allocated_bytes": train_peak,
+        "train_peak_allocated_bytes": train_peak_allocated,
+        "train_peak_reserved_bytes": train_peak_reserved,
         "validation_inference_seconds": inference_seconds,
         "validation_inference_peak_allocated_bytes": torch.cuda.max_memory_allocated(0),
+        "validation_inference_peak_reserved_bytes": torch.cuda.max_memory_reserved(0),
         "oof_predictions_sha256": sha256(fold_dir / "oof_predictions.csv"),
         "no_epoch_or_threshold_selection": True,
         "holdout_evaluated": False,
@@ -547,6 +583,22 @@ def summarize(args) -> None:
     if not np.array_equal(e30["fold"].to_numpy(dtype=int), folds):
         raise ValueError("E30 OOF fold assignments changed")
 
+    e24_metrics_path = args.e24_oof.with_name("metrics.json")
+    if sha256(e24_metrics_path) != EXPECTED_E24_METRICS_SHA256:
+        raise ValueError("E24 reference metrics changed from the locked audit")
+    if sha256(args.e24_oof) != EXPECTED_E24_OOF_SHA256:
+        raise ValueError("Saved E24 reference OOF changed from the locked audit")
+    e24_metrics = read_json(e24_metrics_path)
+    expected_sources = [
+        ("E24 E0c", args.e24_scores, e24_metrics["e24_scores_sha256"]),
+        ("RoBERTa", args.roberta_scores, e24_metrics["roberta_scores_sha256"]),
+        *[(f"ModernBERT seed {seed}", path,
+           e24_metrics["modern_seed_score_sha256"][str(seed)])
+          for seed, path in zip((42, 17, 73), args.modern_scores)],
+    ]
+    for name, path, expected_hash in expected_sources:
+        if sha256(path) != expected_hash:
+            raise ValueError(f"{name} scores differ from the locked E24 source")
     e24 = load_scores(args.e24_scores)
     roberta = load_scores(args.roberta_scores)
     modern = [load_scores(path) for path in args.modern_scores]
@@ -608,6 +660,9 @@ def summarize(args) -> None:
         "experiment": cfg["experiment"], "stage": "five_fold_oof_analysis",
         "config_sha256": sha256(CONFIG_PATH),
         "protocol_lock_sha256": sha256(args.output_dir / "protocol_lock.json"),
+        "e24_reference_metrics_sha256": sha256(e24_metrics_path),
+        "e24_reference_oof_sha256": sha256(args.e24_oof),
+        "e24_source_score_sha256": {name: digest for name, _, digest in expected_sources},
         "rows": len(e30), "prompts": int(e30["prompt_id"].nunique()),
         "labels": list(LABELS), "balanced_accuracy": scores,
         "e30_single_confusion_matrix": cm.tolist(),
@@ -641,7 +696,7 @@ def main() -> None:
         stage = stages.add_parser(name)
         stage.add_argument("--train", type=Path, default=Path("data/train.csv"))
         stage.add_argument("--e0-dir", type=Path, default=Path("outputs/e0_tfidf_svm"))
-        stage.add_argument("--output-dir", type=Path, default=Path("outputs/e30_qwen3_embedding8b"))
+        stage.add_argument("--output-dir", type=Path, default=Path("outputs/e30_qwen3_embedding8b_v2"))
         if name in ("resource", "fit-fold"):
             stage.add_argument("--model-dir", type=Path, required=True,
                                help="Local official embedding snapshot; no download is performed")
