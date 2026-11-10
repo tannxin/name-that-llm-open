@@ -205,6 +205,10 @@ def resource(args: argparse.Namespace) -> None:
     loader = DataLoader(Rows(), batch_size=1, shuffle=True,
                         generator=torch.Generator().manual_seed(SEED),
                         num_workers=0, collate_fn=collate)
+    # Include base-model loading in the measured peak. Torch 2.6 needs the
+    # allocator initialized before reset_peak_memory_stats.
+    torch.empty(1, device="cuda:0")
+    torch.cuda.reset_peak_memory_stats(0)
     started = time.perf_counter()
     model = make_base_model(args.model_dir)
     model.config.pad_token_id = tokenizer.pad_token_id
@@ -225,7 +229,6 @@ def resource(args: argparse.Namespace) -> None:
         optimizer, num_warmup_steps=warmup_updates,
         num_training_steps=total_updates)
     scaler = torch.amp.GradScaler("cuda")
-    torch.cuda.reset_peak_memory_stats(0)
     training_started = time.perf_counter()
     optimizer.zero_grad(set_to_none=True)
     skipped_updates = 0
@@ -254,6 +257,9 @@ def resource(args: argparse.Namespace) -> None:
             raise TimeoutError("One-epoch resource gate exceeded 60 minutes")
     train_seconds = time.perf_counter() - training_started
     peak_train_bytes = torch.cuda.max_memory_allocated(0)
+    peak_train_reserved_bytes = torch.cuda.max_memory_reserved(0)
+    planned_one_epoch_updates = math.ceil(len(loader) / GRAD_ACCUM)
+    minimum_completed_updates = math.ceil(planned_one_epoch_updates * 0.95)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     adapter_dir = args.output_dir / "one_epoch_adapter_resource_only"
     model.save_pretrained(adapter_dir, safe_serialization=True)
@@ -283,9 +289,12 @@ def resource(args: argparse.Namespace) -> None:
     torch.cuda.synchronize(0)
     inference_seconds = time.perf_counter() - inference_started
     peak_inference_bytes = torch.cuda.max_memory_allocated(0)
+    peak_inference_reserved_bytes = torch.cuda.max_memory_reserved(0)
     projected_training = train_seconds * PLANNED_EPOCHS
     gate = {
-        "train_peak_under_22_gib": peak_train_bytes < 22 * 2**30,
+        "train_peak_under_22_gib": peak_train_reserved_bytes < 22 * 2**30,
+        "inference_peak_under_22_gib": peak_inference_reserved_bytes < 22 * 2**30,
+        "optimizer_updates_at_least_95pct": completed_updates >= minimum_completed_updates,
         "one_epoch_under_60_minutes": train_seconds <= 3600,
         "projected_three_epochs_under_3_hours": projected_training <= 3 * 3600,
         "four_thousand_inference_under_3_hours": inference_seconds <= 3 * 3600,
@@ -306,12 +315,16 @@ def resource(args: argparse.Namespace) -> None:
         "training_seconds": train_seconds,
         "projected_three_epoch_seconds": projected_training,
         "train_peak_allocated_bytes": peak_train_bytes,
+        "train_peak_reserved_bytes": peak_train_reserved_bytes,
         "adapter_reload_seconds": reload_seconds,
         "inference_rows": len(inference_texts),
         "inference_seconds": inference_seconds,
         "inference_peak_allocated_bytes": peak_inference_bytes,
+        "inference_peak_reserved_bytes": peak_inference_reserved_bytes,
         "completed_optimizer_updates": completed_updates,
         "skipped_optimizer_updates": skipped_updates,
+        "planned_one_epoch_optimizer_updates": planned_one_epoch_updates,
+        "minimum_completed_optimizer_updates": minimum_completed_updates,
         "packages": versions,
         "total_wall_seconds": time.perf_counter() - started,
         "validation_accuracy_computed": False,

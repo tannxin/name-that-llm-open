@@ -10,7 +10,7 @@
 
 固定候选训练日程为 seed 42、3 epoch、微批 1、梯度累积 8（有效 batch 8）、AdamW 学习率 `2e-4`、weight decay 0.01、首 3% 优化器更新 linear warmup 后 linear decay、普通 18 类交叉熵、FP16 计算，不按指标选精度或轮次。为控制本次资源测试成本，**只跑折 1 的完整第 1 epoch**，其余超参按同一固定日程执行；记录吞吐与峰值，再按 3 epoch 线性外推。该外推不是训练完成证明，后续正式五折需要重新从同一预训练 revision 开始并跑满 3 epoch。折 1 验证文本仅可用于最多 32 条**无标签**前向延时检查；不加载验证标签来算分、不保存验证 18 类分数。
 
-推理资源测试在单折权重上对官方**折 1 训练侧**文本作固定重复，构成 4,000 行无标签、与真实测试条数同规模的输入；记录模型装载、tokenization、完整 4,000 行 batch 1 前向的墙钟及 GPU 峰值。不得用折 1 验证或隐藏测试标签，也不把这份重复输入上的速度误称为 Kaggle 原生 GPU 实测。候选继续的资源门槛：GPU2 启动前空闲；训练峰值分配 <22 GiB、无 OOM/NaN；1 epoch ≤60 分钟且 3 epoch 线性估计 ≤3 小时；4,000 行完整 GPU 推理 ≤3 小时，叠加既有 E16/E24 管线估计仍须给 Kaggle 9 小时留至少 2 小时余量。**这些是服务器筛选门槛，最终仍需在 Kaggle 实际可用 GPU 上做离线重载与 4,000 行计时**，因为 RTX 3090 不能代表 T4/P100 的速度。
+推理资源测试在单折权重上对官方**折 1 训练侧**文本作固定重复，构成 4,000 行无标签、与真实测试条数同规模的输入；记录模型装载、tokenization、完整 4,000 行 batch 1 前向的墙钟及 GPU 峰值。不得用折 1 验证或隐藏测试标签，也不把这份重复输入上的速度误称为 Kaggle 原生 GPU 实测。候选继续的资源门槛：GPU2 启动前空闲；包含模型加载的训练峰值保留显存 <22 GiB、推理峰值保留显存 <22 GiB、至少 95% 计划优化器更新成功、无 OOM/NaN；1 epoch ≤60 分钟且 3 epoch 线性估计 ≤3 小时；4,000 行完整 GPU 推理 ≤3 小时，叠加既有 E16/E24 管线估计仍须给 Kaggle 9 小时留至少 2 小时余量。**这些是服务器筛选门槛，最终仍需在 Kaggle 实际可用 GPU 上做离线重载与 4,000 行计时**，因为 RTX 3090 不能代表 T4/P100 的速度。
 
 本赛[官方规则](https://www.kaggle.com/competitions/name-that-llm/overview/description)要求 Notebook 提交、Internet `off`、GPU ≤9 小时，允许免费公开预训练模型，输出 `submission.parquet`；因此若进入后续阶段，基座快照、adapter、tokenizer 和 wheelhouse 都须作为 Notebook 的离线输入重载，运行时不能访问 Hugging Face。使用单独的 E28 依赖目录与独立输出目录，不改正在运行的 E27 环境或 GPU1，不在 GPU2 有任务时启动训练。任何下载、依赖或硬件条件未满足则记录原因并停止，不替换模型、改参数或转用别的 GPU 产生不可比结果。
 
@@ -46,3 +46,5 @@ ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namet
 [watch_e28_qwen3_resource.py](../watch_e28_qwen3_resource.py) 已作为后台 PID `1219155` 启动，通用脚本以 `--download-pid` 指定下载进程。它每 60 秒只读检查上述 `COMPLETE` 和 manifest；若下载进程提前退出或等待超过 4 小时，则写入 `WATCHER_ABORT` 并退出。完成后逐项核验固定 revision、13 个运行文件的 manifest，并调用 E28 `verify_model_dir` **从本地文件重新计算全部必需文件 SHA-256**。随后再次确认物理 GPU2 显存 ≤256 MiB、利用率 0、无 CUDA compute PID；任一检查失败即退出，不换 GPU、不改参数。资源入口本身还会在加载 CUDA 模型前再次核验文件哈希与可用显存。
 
 所有门槛均通过时，watcher 仅启动预登记折 1 的 1 epoch 和 4,000 行无标签推理，设置 `CUDA_VISIBLE_DEVICES=2` 与离线环境变量；不计算验证准确率、不启动五折或 E30。watcher 状态记录在 `outputs/e28_mirror_download/watcher.log`，资源子进程输出在同目录 `resource.log`，机器结果在 `outputs/e28_qwen8b_resource_mirror/resource_report.json`。部署后只读核查：watcher PID `1219155` 为运行状态，日志仅有 `WATCHER_START`；下载 PID `1217581` 仍运行，模型目录约 7.76 GB，GPU2 55 MiB、0%。**此时资源作业尚未启动。**
+
+首次资源运行前的静态审查将显存门槛改为含模型加载的 `max_memory_reserved`，并新增至少 95% 优化器更新成功的判定；原始训练与推理超参、数据和折号均未改动。更新后的资源脚本须先同步到服务器，再允许 watcher 启动子进程。
