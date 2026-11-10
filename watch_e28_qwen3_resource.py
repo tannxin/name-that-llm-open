@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import atexit
 import argparse
 import json
 import os
@@ -38,6 +39,29 @@ def pid_exists(pid: int) -> bool:
         return False
 
 
+def acquire_lock(lock: Path) -> None:
+    # The server runs Linux. Hold the descriptor for the process lifetime so
+    # concurrent restarts cannot remove/recreate each other's lock file.
+    import fcntl
+
+    handle = lock.open("a+", encoding="utf-8")
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        handle.close()
+        raise RuntimeError("Another watcher holds the lock") from exc
+    try:
+        handle.seek(0)
+        handle.truncate()
+        handle.write(str(os.getpid()) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    except Exception:
+        handle.close()
+        raise
+    atexit.register(handle.close)
+
+
 def download_complete() -> bool:
     if not MANIFEST.is_file() or not DOWNLOAD_LOG.is_file():
         return False
@@ -67,33 +91,35 @@ def verify_manifest_and_files() -> None:
     say("HASH_CHECK_PASS", len(verified_sizes), "required files")
 
 
-def gpu2_idle() -> None:
+def gpu2_idle() -> str:
     query = subprocess.run(
-        ["nvidia-smi", "--query-gpu=index,memory.used,utilization.gpu", "--format=csv,noheader,nounits"],
+        ["nvidia-smi", "--query-gpu=index,uuid,memory.used,utilization.gpu", "--format=csv,noheader,nounits"],
         check=True, capture_output=True, text=True, timeout=20,
     )
     rows = [tuple(x.strip() for x in line.split(",")) for line in query.stdout.splitlines()]
-    gpu2 = [row for row in rows if len(row) == 3 and row[0] == "2"]
+    gpu2 = [row for row in rows if len(row) == 4 and row[0] == "2"]
     if len(gpu2) != 1:
         raise RuntimeError(f"Could not identify physical GPU2: {rows}")
-    memory_mib, utilization = int(gpu2[0][1]), int(gpu2[0][2])
+    uuid = gpu2[0][1]
+    memory_mib, utilization = int(gpu2[0][2]), int(gpu2[0][3])
+    if not uuid.startswith("GPU-"):
+        raise RuntimeError("Physical GPU2 returned an invalid UUID")
     if memory_mib > 256 or utilization != 0:
         raise RuntimeError(f"GPU2 is occupied: {memory_mib} MiB, {utilization}%")
     process_query = subprocess.run(
-        ["nvidia-smi", "-i", "2", "--query-compute-apps=pid", "--format=csv,noheader"],
+        ["nvidia-smi", "-i", uuid, "--query-compute-apps=pid", "--format=csv,noheader"],
         check=True, capture_output=True, text=True, timeout=20,
     )
     if re.search(r"\b\d+\b", process_query.stdout):
         raise RuntimeError(f"GPU2 has a compute process: {process_query.stdout.strip()}")
     say("GPU2_IDLE", memory_mib, "MiB", utilization, "%")
+    return uuid
 
 
 def main(download_pid: int) -> None:
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     lock = DOWNLOAD_DIR / "watcher.lock"
-    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as handle:
-        handle.write(str(os.getpid()) + "\n")
+    acquire_lock(lock)
     say("WATCHER_START", "pid", os.getpid(), "download_pid", download_pid)
     deadline = time.monotonic() + TIMEOUT_SECONDS
     while not download_complete():
@@ -106,9 +132,9 @@ def main(download_pid: int) -> None:
     verify_manifest_and_files()
     if RESOURCE_DIR.exists() and any(RESOURCE_DIR.iterdir()):
         raise RuntimeError("Resource output directory is already populated")
-    gpu2_idle()
+    gpu_uuid = gpu2_idle()
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "2"
+    env["CUDA_VISIBLE_DEVICES"] = gpu_uuid
     env["PYTHONPATH"] = str(ROOT / "outputs/e28_pydeps") + os.pathsep + str(ROOT)
     env["HF_HUB_OFFLINE"] = "1"
     env["TRANSFORMERS_OFFLINE"] = "1"
@@ -134,7 +160,11 @@ def main(download_pid: int) -> None:
     report = json.loads(report_path.read_text(encoding="utf-8"))
     if report.get("validation_accuracy_computed") is not False or report.get("validation_scores_saved") is not False:
         raise RuntimeError("Resource report violated no-validation-score protocol")
-    say("RESOURCE_COMPLETE", "gate_passed", report.get("gate_passed"), "train_s", round(report["training_seconds"], 1), "infer_s", round(report["inference_seconds"], 1))
+    if report.get("gate_passed") is not True:
+        say("RESOURCE_GATE_FAILED", "train_s", round(report["training_seconds"], 1),
+            "infer_s", round(report["inference_seconds"], 1))
+        raise RuntimeError("E28 resource report did not pass the pre-registered gate")
+    say("RESOURCE_COMPLETE", "gate_passed", True, "train_s", round(report["training_seconds"], 1), "infer_s", round(report["inference_seconds"], 1))
 
 
 if __name__ == "__main__":

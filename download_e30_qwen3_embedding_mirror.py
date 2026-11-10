@@ -17,11 +17,15 @@ import shutil
 import time
 import urllib.parse
 import urllib.request
+import uuid
 from pathlib import Path
 
 
 MODEL_ID = "Qwen/Qwen3-Embedding-8B"
 HF_REVISION = "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af"
+# Qwen-owned ModelScope repository HEAD/master resolved by git ls-remote on
+# 2026-11-10. Both the files and download endpoints accept this commit SHA.
+MS_REVISION = "fcd9221ff0c460fdd81bfd04f4bc5b014e58da5b"
 MS_API_ROOT = f"https://modelscope.cn/api/v1/models/{MODEL_ID}/repo"
 HF_BASE = f"https://huggingface.co/{MODEL_ID}"
 CHUNK = 4 * 1024 * 1024
@@ -62,7 +66,7 @@ def read_json_url(url: str) -> object:
 
 def official_mirror_manifest() -> dict[str, dict[str, int | str]]:
     url = MS_API_ROOT + "/files?" + urllib.parse.urlencode(
-        {"Revision": "master", "Recursive": "true"})
+        {"Revision": MS_REVISION, "Recursive": "true"})
     payload = read_json_url(url)
     if not isinstance(payload, dict) or not payload.get("Success"):
         raise RuntimeError(f"ModelScope manifest request failed: {payload}")
@@ -105,9 +109,21 @@ def verify_hf_small_files_and_tree() -> dict[str, bool]:
     return {"hf_tree_sizes_and_lfs_sha_match": True, "hf_small_file_bytes_match": True}
 
 
-def inspect_existing(model_dir: Path) -> tuple[int, int]:
+def quarantine_partial(partial: Path, observed_sha: str) -> Path:
+    # Keep the evidence instead of deleting a corrupt multi-GB partial file.
+    quarantine = partial.with_name(
+        f"{partial.name}.corrupt-{observed_sha[:12]}-{uuid.uuid4().hex}")
+    if partial.resolve().parent != quarantine.resolve().parent or quarantine.exists():
+        raise ValueError("Unsafe E30 partial-file quarantine target")
+    os.replace(partial, quarantine)
+    print("QUARANTINED_CORRUPT_PARTIAL", partial.name, quarantine.name, flush=True)
+    return quarantine
+
+
+def inspect_existing(model_dir: Path) -> tuple[int, int, int]:
     remaining = 0
     verified = 0
+    quarantined = 0
     for name, (size, digest) in EXPECTED.items():
         target = model_dir / name
         partial = target.with_name(target.name + ".part")
@@ -120,10 +136,17 @@ def inspect_existing(model_dir: Path) -> tuple[int, int]:
         elif partial.is_file():
             if partial.stat().st_size > size:
                 raise ValueError(f"Partial file exceeds pinned official size: {partial}")
-            remaining += size - partial.stat().st_size
+            if partial.stat().st_size == size:
+                observed = sha256(partial)
+                if observed != digest:
+                    quarantine_partial(partial, observed)
+                    remaining += size
+                    quarantined += 1
+            else:
+                remaining += size - partial.stat().st_size
         else:
             remaining += size
-    return remaining, verified
+    return remaining, verified, quarantined
 
 
 def download_one(job: tuple[Path, str, dict[str, int | str]]) -> tuple[str, int, str]:
@@ -136,7 +159,8 @@ def download_one(job: tuple[Path, str, dict[str, int | str]]) -> tuple[str, int,
         print("SKIP_VERIFIED", name, size, flush=True)
         return name, size, digest
     partial = target.with_name(target.name + ".part")
-    url = MS_API_ROOT + "?" + urllib.parse.urlencode({"Revision": "master", "FilePath": name})
+    url = MS_API_ROOT + "?" + urllib.parse.urlencode(
+        {"Revision": MS_REVISION, "FilePath": name})
     for attempt in range(1, 11):
         offset = partial.stat().st_size if partial.exists() else 0
         if offset > size:
@@ -168,16 +192,24 @@ def download_one(job: tuple[Path, str, dict[str, int | str]]) -> tuple[str, int,
             if partial.stat().st_size == size:
                 break
             print("SHORT_READ", name, partial.stat().st_size, size, flush=True)
+            if attempt < 10:
+                pause = min(2 ** attempt, 30)
+                print("BACKOFF_SECONDS", name, pause, flush=True)
+                time.sleep(pause)
         except (OSError, TimeoutError) as error:
             print("RETRY", name, attempt, type(error).__name__, str(error), flush=True)
             if attempt == 10:
                 raise
-            time.sleep(min(2 * attempt, 20))
+            pause = min(2 ** attempt, 30)
+            print("BACKOFF_SECONDS", name, pause, flush=True)
+            time.sleep(pause)
     if not partial.is_file() or partial.stat().st_size != size:
         raise RuntimeError(f"Incomplete download after retry budget: {name}")
     observed = sha256(partial)
     if observed != digest:
-        raise ValueError(f"Downloaded SHA-256 mismatch for {name}: {observed}")
+        quarantine_partial(partial, observed)
+        raise ValueError(f"Downloaded SHA-256 mismatch for {name}; corrupt partial quarantined. "
+                         "Rerun download to recheck free space and fetch this file anew")
     os.replace(partial, target)
     print("VERIFIED", name, size, observed, flush=True)
     return name, size, observed
@@ -207,6 +239,7 @@ def main() -> None:
     total_bytes = sum(int(item["size"]) for item in manifest.values())
     if args.stage == "check":
         result = {"model_id": MODEL_ID, "hf_revision": HF_REVISION,
+                  "modelscope_revision": MS_REVISION,
                   "mirror": f"https://modelscope.cn/models/{MODEL_ID}",
                   "files": len(manifest), "total_bytes": total_bytes,
                   "modelscope_metadata_matches_pinned_hf_bytes": True,
@@ -217,11 +250,13 @@ def main() -> None:
         return
     if not 1 <= args.max_workers <= 5:
         raise ValueError("--max-workers must be in 1..5")
-    remaining, verified = inspect_existing(args.model_dir)
+    remaining, verified, quarantined = inspect_existing(args.model_dir)
     free = shutil.disk_usage(existing_ancestor(args.model_dir)).free
     reserve = 10 * 1024**3
-    print("START", MODEL_ID, HF_REVISION, "total_bytes", total_bytes,
+    print("START", MODEL_ID, "hf_revision", HF_REVISION,
+          "modelscope_revision", MS_REVISION, "total_bytes", total_bytes,
           "remaining_bytes", remaining, "already_verified", verified,
+          "quarantined_corrupt_partials", quarantined,
           "disk_free", free, flush=True)
     if free < remaining + reserve:
         raise OSError("Insufficient disk space for remaining pinned files plus 10 GiB reserve")
@@ -232,6 +267,7 @@ def main() -> None:
         results = list(pool.map(download_one, jobs))
     report = {
         "model_id": MODEL_ID, "hf_revision": HF_REVISION,
+        "modelscope_revision": MS_REVISION,
         "mirror": f"https://modelscope.cn/models/{MODEL_ID}",
         "files": {name: {"size": size, "sha256": digest}
                   for name, size, digest in results},

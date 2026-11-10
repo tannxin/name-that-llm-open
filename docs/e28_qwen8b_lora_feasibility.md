@@ -45,6 +45,8 @@ ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namet
 
 [watch_e28_qwen3_resource.py](../watch_e28_qwen3_resource.py) 已作为后台 PID `1219155` 启动，通用脚本以 `--download-pid` 指定下载进程。它每 60 秒只读检查上述 `COMPLETE` 和 manifest；若下载进程提前退出或等待超过 4 小时，则写入 `WATCHER_ABORT` 并退出。完成后逐项核验固定 revision、13 个运行文件的 manifest，并调用 E28 `verify_model_dir` **从本地文件重新计算全部必需文件 SHA-256**。随后再次确认物理 GPU2 显存 ≤256 MiB、利用率 0、无 CUDA compute PID；任一检查失败即退出，不换 GPU、不改参数。资源入口本身还会在加载 CUDA 模型前再次核验文件哈希与可用显存。
 
-所有门槛均通过时，watcher 仅启动预登记折 1 的 1 epoch 和 4,000 行无标签推理，设置 `CUDA_VISIBLE_DEVICES=2` 与离线环境变量；不计算验证准确率、不启动五折或 E30。watcher 状态记录在 `outputs/e28_mirror_download/watcher.log`，资源子进程输出在同目录 `resource.log`，机器结果在 `outputs/e28_qwen8b_resource_mirror/resource_report.json`。部署后只读核查：watcher PID `1219155` 为运行状态，日志仅有 `WATCHER_START`；下载 PID `1217581` 仍运行，模型目录约 7.76 GB，GPU2 55 MiB、0%。**此时资源作业尚未启动。**
+所有门槛均通过时，watcher 仅启动预登记折 1 的 1 epoch 和 4,000 行无标签推理，按物理 GPU2 的 UUID 设置 `CUDA_VISIBLE_DEVICES` 与离线环境变量；不计算验证准确率、不启动五折或 E30。资源入口在完整文件哈希检查之后、CUDA 模型加载之前，再核对这个 UUID 与物理 GPU2 的空闲状态，减少检查和启动之间的竞态。watcher 状态记录在 `outputs/e28_mirror_download/watcher.log`，资源子进程输出在同目录 `resource.log`，机器结果在 `outputs/e28_qwen8b_resource_mirror/resource_report.json`。最初部署检查时，watcher PID `1219155` 的日志仅有 `WATCHER_START`；下载 PID `1217581` 仍运行，GPU2 55 MiB、0%。**此时资源作业尚未启动。**
 
-首次资源运行前的静态审查将显存门槛改为含模型加载的 `max_memory_reserved`，并新增至少 95% 优化器更新成功的判定；原始训练与推理超参、数据和折号均未改动。更新后的资源脚本须先同步到服务器，再允许 watcher 启动子进程。
+首次资源运行前的静态审查将显存门槛改为含模型加载的 `max_memory_reserved`，并新增至少 95% 优化器更新成功的判定。watcher 使用进程持有的 Linux 文件锁，退出时自动释放，防止重启竞态；若资源报告 `gate_passed=false`，它以失败状态退出，不产生成功信号。原始训练与推理超参、数据和折号均未改动。更新后的 watcher 与资源脚本须先同步到服务器，再允许启动子进程。
+
+更新后的两个脚本已在服务器通过语法检查、与本地 SHA-256 一致；旧 watcher 已单独停止，下载进程保持运行。新 watcher PID `1220059` 在 2026-11-10 08:17 UTC 启动，日志显示 `WATCHER_START`，资源日志尚未出现。此时模型目录约 11.78 GB，仍在下载，未启动 GPU 作业。

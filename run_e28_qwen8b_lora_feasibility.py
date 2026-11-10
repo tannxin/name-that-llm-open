@@ -8,6 +8,9 @@ import gc
 import importlib.metadata
 import json
 import math
+import os
+import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -155,6 +158,34 @@ def make_base_model(model_dir: Path):
     )
 
 
+def verify_physical_gpu2_idle() -> str:
+    """Recheck the physical card after hashing and before loading a CUDA model."""
+    query = subprocess.run(
+        ["nvidia-smi", "--query-gpu=index,uuid,memory.used,utilization.gpu",
+         "--format=csv,noheader,nounits"],
+        check=True, capture_output=True, text=True, timeout=20,
+    )
+    rows = [tuple(part.strip() for part in line.split(","))
+            for line in query.stdout.splitlines()]
+    matching = [row for row in rows if len(row) == 4 and row[0] == "2"]
+    if len(matching) != 1:
+        raise RuntimeError(f"Could not identify physical GPU2: {rows}")
+    gpu_uuid = matching[0][1]
+    if not gpu_uuid.startswith("GPU-") or os.environ.get("CUDA_VISIBLE_DEVICES") != gpu_uuid:
+        raise RuntimeError("CUDA_VISIBLE_DEVICES must equal the physical GPU2 UUID")
+    memory_mib, utilization = int(matching[0][2]), int(matching[0][3])
+    if memory_mib > 256 or utilization != 0:
+        raise RuntimeError(f"GPU2 is occupied: {memory_mib} MiB, {utilization}%")
+    processes = subprocess.run(
+        ["nvidia-smi", "-i", gpu_uuid, "--query-compute-apps=pid",
+         "--format=csv,noheader"],
+        check=True, capture_output=True, text=True, timeout=20,
+    )
+    if re.search(r"\b\d+\b", processes.stdout):
+        raise RuntimeError(f"GPU2 has a compute process: {processes.stdout.strip()}")
+    return gpu_uuid
+
+
 def resource(args: argparse.Namespace) -> None:
     import torch
     from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
@@ -169,8 +200,9 @@ def resource(args: argparse.Namespace) -> None:
     if (versions["transformers"] != "4.51.3" or versions["peft"] != "0.15.2"
             or versions["accelerate"] != "1.6.0" or versions["bitsandbytes"] != "0.45.5"):
         raise ValueError(f"Locked package versions differ: {versions}")
+    physical_gpu_uuid = verify_physical_gpu2_idle()
     if torch.cuda.device_count() != 1:
-        raise ValueError("Set CUDA_VISIBLE_DEVICES=2 after checking physical GPU2 is idle")
+        raise ValueError("Expected exactly one CUDA device selected by physical GPU2 UUID")
     if "RTX 3090" not in torch.cuda.get_device_name(0):
         raise ValueError("E28 is pinned to one physical RTX 3090 on server GPU2")
     if torch.cuda.mem_get_info(0)[0] < 22 * 2**30:
@@ -307,6 +339,7 @@ def resource(args: argparse.Namespace) -> None:
         "model_revision": MODEL_REVISION,
         "model_files_bytes": sizes,
         "model_sha256_verified": True,
+        "physical_gpu_uuid": physical_gpu_uuid,
         "train_sha256": sha256(args.train),
         "fold": FOLD,
         "training_rows": len(texts),
