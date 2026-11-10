@@ -62,7 +62,7 @@
 | E21 | 对 E16 的家族内版本施加概率守恒的固定软门控 | 0.4102 | 相对 E16 仅 +0.0009；3/5 折不降，最差类 −0.075；不提交 |
 | E22 | 对低置信回答加入折内类别条件排版出现证据 | 0.4102 | 相对 E16 仅 +0.0009；4/5 折不降，最差类 −0.0167；不提交 |
 | E23 | 对 E16 分数做一次有界、无标签批次类别边际校正 | 0.4130 | 相对 E16 +0.0037；5/5 折不降，但低于 +0.01 门槛且测试类别比例未知；不提交 |
-| E24 | 审计后的 prvsiyan v9 原始 `new` 外部回答，按每类总权重 0.25 重拟合 E0c | 0.3727 | 固定 E16 融合 **0.4250**，较 E16 +0.0157；4/5 折不降、最差类 −0.0417，通过低成本晋级门槛；来源协议依赖官方统计，仍为探索性 |
+| E24 | 审计后的 prvsiyan v9 原始 `new` 外部回答，按每类总权重 0.25 重拟合 E0c | 0.3727 | 固定 E16 融合开发 OOF **0.4250**，较 E16 +0.0157；Kaggle 公榜 **0.434**，较 E16 公榜 0.407 高 0.027；私榜未知，来源协议依赖官方统计的 OOF 仍为探索性 |
 | E25-B | 同一审计外部集与官方训练折混合监督训练 ModernBERT seeds 42、17 | 0.3593 / 0.3597 | 单独替换 seed 42、17 的 E16 固定融合分别 **0.4208**、**0.4153**，均通过各自预设门槛；E24 E0c + 两个新 seed 的固定融合 **0.4292**，较 E24 仅 +0.0042，3/5 折不降；未有新 Kaggle 分数 |
 | E25-C | 外部数据预训练 ModernBERT，随后只用官方训练折适配 | 0.3458 | 仅替换 E16 seed 42，固定融合 **0.4167**，较 E16 +0.0074，未达 +0.01 门槛，不晋级 |
 | E26 | 在 E24 外部数据训练的 E0c 中加入固定 shape 字符特征 | 0.3722 | 只替换 E24 的 E0c，固定融合 **0.4199**，低于 E24 的 0.4250；与 E25-B seed 42 叠加仅 +0.0014，不晋级 |
@@ -88,7 +88,7 @@ E0 每折 balanced accuracy：0.2523、0.2894、0.2986、0.2801、0.2847。2,160
 
 2026-11-06 按预定的三种子 ModernBERT 规则提交 [E16 离线 Notebook Version #1](https://www.kaggle.com/code/tanxin357/name-that-llm-e16-three-seed-modernbert-submission?scriptVersionId=366158472)。[提交列表](https://www.kaggle.com/competitions/name-that-llm/submissions)显示隐藏重跑成功，**公榜 balanced accuracy 0.407**，较 E10 同一公榜的 0.401 提高 **0.006**。这只是公榜子集的结果；私榜尚未知，后续实验不据此调整三种子的权重。
 
-2026-11-10 [E24 离线 Notebook Version #1](https://www.kaggle.com/code/tanxin357/name-that-llm-e24-audited-external-e0c-submission?scriptVersionId=367930146) 在 Kaggle 的三行预览运行成功，生成 `submission.parquet` 并通过脚本的行数、ID、类别与格式检查。比赛数据和三个私有模型数据集均已绑定，Internet `off`、Accelerator `None`。该版本已在[比赛提交页](https://www.kaggle.com/competitions/name-that-llm/submissions)正式提交，提交列表显示 `Notebook Running`，正在用隐藏测试集重跑；E24 公榜分数仍未知。E24 的 0.4250、E25-B 单种子融合的 0.4208 和 E24+E25-B 两种子融合的 0.4292 均为开发集折外分数，不能当作公榜分数。
+2026-11-10 [E24 离线 Notebook Version #1](https://www.kaggle.com/code/tanxin357/name-that-llm-e24-audited-external-e0c-submission?scriptVersionId=367930146) 在 Kaggle 的三行预览运行成功，生成 `submission.parquet` 并通过脚本的行数、ID、类别与格式检查。比赛数据和三个私有模型数据集均已绑定，Internet `off`、Accelerator `None`。[比赛提交页](https://www.kaggle.com/competitions/name-that-llm/submissions)已显示隐藏重跑 **Succeeded，公榜 balanced accuracy 0.434**，比 E16 公榜 **0.407** 高 **0.027**；私榜尚未知。E24 的 0.4250、E25-B 单种子融合的 0.4208 和 E24+E25-B 两种子融合的 0.4292 均为开发集折外分数，不能当作公榜分数。公榜收益不消除 E24 外部生成协议曾参考全量官方训练统计的 OOF 解释限制。
 
 ## 第二轮按顺序优化
 

@@ -31,3 +31,5 @@ Notebook 的全部代码单元已通过 Python 语法解析；新增 E24 挂载/
 2026-11-10：已在 [E24 Kaggle Notebook Version #1](https://www.kaggle.com/code/tanxin357/name-that-llm-e24-audited-external-e0c-submission?scriptVersionId=367930146) 核对 7 个代码单元及全部四个输入（比赛数据、原 E0c/RoBERTa、E16 ModernBERT、E24 模型数据集），会话设置显示 Accelerator `None`、Internet `off`。以 `E24 audited external E0c` 保存版本后，版本页显示 `Private`、`Running for 123.6s`，活动面板也显示 `Running`。
 
 同日后续：Version #1 在 Kaggle 上 **165 秒成功完成三行预览运行**。Notebook 日志核实原模型、E16、E24 产物哈希，离线 wheelhouse 35 个哈希，三个 ModernBERT seed 全部推理完成，输出 `submission.parquet` 共 3 行。随后在[比赛提交页](https://www.kaggle.com/competitions/name-that-llm/submissions)选择此版本和该输出文件正式提交；提交列表出现 `Notebook Running` 记录及对应描述。Kaggle 正在以隐藏测试集私有重跑，公榜分数仍待出；三行预览的 165 秒不能外推为隐藏测试耗时。
+
+同日评分完成：提交列表已显示 **Succeeded，公榜 balanced accuracy 0.434**，较 E16 公榜 **0.407** 提高 **0.027**。这是真实隐藏测试公榜子集的分数；私榜仍未知。三行预览的运行时间和 E24 开发集 OOF 0.4250 均不可与该公榜分数互换。
