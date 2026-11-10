@@ -32,7 +32,6 @@ from run_e30_supervised_embedding8b import (
 
 ROOT = Path(__file__).resolve().parent
 DOWNLOAD_DIR = ROOT / "outputs/e30_mirror_download"
-DOWNLOAD_LOG = DOWNLOAD_DIR / "download.log"
 MODEL_DIR = ROOT / "data/models/qwen3-embedding-8b-1d8ad4c"
 MANIFEST = MODEL_DIR / "e30_mirror_manifest.json"
 OUTPUT_DIR = ROOT / "outputs/e30_qwen3_embedding8b_v3"
@@ -78,9 +77,10 @@ def protocol_check() -> dict:
 
 
 def download_complete() -> bool:
-    if not MANIFEST.is_file() or not DOWNLOAD_LOG.is_file():
-        return False
-    return re.search(r"^COMPLETE\b", DOWNLOAD_LOG.read_text(encoding="utf-8", errors="replace"), re.M) is not None
+    # A resumed downloader writes its own log, so the original log may never
+    # receive COMPLETE. The downloader writes this manifest only after all
+    # pinned files pass SHA-256; verify_manifest_and_files rehashes them here.
+    return MANIFEST.is_file()
 
 
 def release_recorded() -> bool:
