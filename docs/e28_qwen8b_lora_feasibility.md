@@ -22,7 +22,7 @@
 
 脚本 [run_e28_qwen8b_lora_feasibility.py](../run_e28_qwen8b_lora_feasibility.py) 实现 `preflight` 与受完整快照守卫的 `resource`；前者的机器报告存于本地与服务器的 `outputs/e28_qwen8b_preflight/preflight.json`：`model_complete=false`、官方训练 SHA 正确、锁定依赖版本齐全、`CUDA_VISIBLE_DEVICES=2` 下只看见 1 块卡。脚本通过 Python 语法检查。**没有启动 GPU 训练、没有得到单折时间/显存或 4,000 行推理指标，也没有计算验证准确率。** 未来如权重可通过稳定通路完整取得，应先重新做资源测试，再决定是否开展五折；当前不能声称 8B LoRA 比现有方案有效或 Kaggle 离线可运行。
 
-## 2026-11-10 官方镜像恢复通路：下载完成，资源测试中
+## 2026-11-10 官方镜像恢复通路：下载完成，资源测试通过
 
 [Qwen 官方 Qwen3 README](https://github.com/QwenLM/Qwen3) 明确建议中国大陆用户使用 [ModelScope 官方 `Qwen/Qwen3-8B`](https://modelscope.cn/models/Qwen/Qwen3-8B)。从 [Hugging Face 固定 revision 文件树](https://huggingface.co/api/models/Qwen/Qwen3-8B/tree/b968826d9c46dd6066d109eabc6255188de91218?recursive=true) 与 [ModelScope 文件清单 API](https://modelscope.cn/api/v1/models/Qwen/Qwen3-8B/repo/files?Revision=master&Recursive=true) 逐项核对，五个权重分片（大小分别为 3,996,250,744、3,993,160,032、3,959,604,768、3,187,841,392、1,244,659,840 bytes）及 `tokenizer.json` 的 SHA-256 和大小完全相同。`config.json`、`generation_config.json`、`model.safetensors.index.json`、`tokenizer_config.json`、`vocab.json`、`LICENSE` 也已从两站实际下载并做字节级 SHA-256 比较，完全一致。因此该镜像可提供**同一锁定权重**，无需换模型；ModelScope 仓库中的 `.gitattributes` 等平台元数据并非运行所需文件，不纳入模型快照。
 
@@ -52,3 +52,11 @@ ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namet
 更新后的两个脚本已在服务器通过语法检查、与本地 SHA-256 一致；旧 watcher 已单独停止，下载进程保持运行。新 watcher PID `1220059` 在 2026-11-10 08:17 UTC 启动，日志显示 `WATCHER_START`，资源日志尚未出现。此时模型目录约 11.78 GB，仍在下载，未启动 GPU 作业。
 
 截至 09:07 UTC，`resource.log` 已显示五个分片装载和新建 18 类分类头；GPU2 约 8.18 GiB、93% 利用率，与资源试验已开始相符。**尚无完整单 epoch、4,000 行推理或资源门槛报告，也没有 E28 验证分数。**
+
+### 09:37 UTC 资源测试完成
+
+服务器 `outputs/e28_qwen8b_resource_mirror/resource_report.json` 的固定模型 revision、官方训练 CSV SHA-256 和模型文件 SHA-256 均通过检查；watcher 记录 `RESOURCE_EXIT 0`、`RESOURCE_COMPLETE gate_passed True`。仅用折 1 的 1,728 条训练侧官方回答完成 **1 epoch，1,091.47 秒（18.19 分钟）**；固定 3 epoch 日程按相同速率线性外推为 **3,274.41 秒（54.57 分钟）**，并非已经跑满 3 epoch。计划的 216 次优化器更新中完成 **212 次（98.15%）**，混合精度跳过 4 次，超过预登记的 95% 门槛。训练峰值 `max_memory_reserved` 为 **8,594,128,896 B（8.00 GiB）**，包含模型加载。
+
+重新加载单折 adapter 后，4,000 条无标签重复输入的完整推理耗时 **561.06 秒（9.35 分钟）**；推理峰值 `max_memory_reserved` 为 **15,885,926,400 B（14.80 GiB）**，包含 adapter 重载。报告中显存、优化器更新、训练/推理时限和无 OOM/非有限值等全部资源门槛为 `true`，总体 `gate_passed=true`。该推理输入来自训练侧重复文本，只用于吞吐测试，不能代表隐藏测试的分布。
+
+**性能仍未知。** 本次没有读取折 1 验证标签、计算验证准确率或保存验证分数，也没有启动五折。服务器 RTX 3090 的资源可行性不等于 Kaggle GPU 上的速度或离线运行可行性；报告明确 `kaggle_hardware_equivalence_proven=false`。下一步若决定验证性能，应按固定日程重新训练五折、先看官方数据 OOF，再用预设融合规则与 E24 比较；只有取得性能证据后才考虑全量训练与 Kaggle Notebook 离线重载、实际 GPU 计时。
