@@ -128,11 +128,29 @@ def main() -> None:
     args = parser.parse_args()
     manifest = official_mirror_manifest()
     required_bytes = sum(int(x["size"]) for x in manifest.values())
-    free = shutil.disk_usage(args.model_dir.parent).free
-    print("START", "revision", MODEL_REVISION, "files", len(manifest), "bytes", required_bytes, "disk_free", free, flush=True)
-    if free < required_bytes + 10 * 1024**3:
-        raise OSError("Insufficient free space for pinned model plus 10 GiB reserve")
     args.model_dir.mkdir(parents=True, exist_ok=True)
+    remaining_bytes = 0
+    for name, item in manifest.items():
+        target = args.model_dir / name
+        partial = target.with_name(target.name + ".part")
+        size = int(item["size"])
+        digest = str(item["sha256"])
+        if target.is_file():
+            if target.stat().st_size != size or sha256(target) != digest:
+                raise ValueError(f"Existing final file differs from pinned official bytes: {target}")
+            if partial.exists():
+                raise ValueError(f"Both final and partial files exist for {name}")
+        elif partial.exists():
+            if partial.stat().st_size > size:
+                raise ValueError(f"Partial file exceeds official size: {partial}")
+            remaining_bytes += size - partial.stat().st_size
+        else:
+            remaining_bytes += size
+    free = shutil.disk_usage(args.model_dir).free
+    print("START", "revision", MODEL_REVISION, "files", len(manifest), "bytes", required_bytes,
+          "bytes_remaining", remaining_bytes, "disk_free", free, flush=True)
+    if free < remaining_bytes + 10 * 1024**3:
+        raise OSError("Insufficient free space for remaining pinned model bytes plus 10 GiB reserve")
     started = time.monotonic()
     jobs = [(args.model_dir, name, item) for name, item in manifest.items()]
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as pool:

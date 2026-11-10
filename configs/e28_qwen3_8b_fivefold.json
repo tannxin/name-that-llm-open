@@ -1,0 +1,41 @@
+{
+  "experiment": "e28_qwen3_8b_official_only_fivefold",
+  "protocol_version": 1,
+  "model_repo": "Qwen/Qwen3-8B",
+  "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "official_train_sha256": "40a22ce8d88c5f46feb4637a099db815bef5f713ffe53e89dbe1b7b21de77707",
+  "seed": 42,
+  "folds": [1, 2, 3, 4, 5],
+  "input": "raw_answer_text_without_chat_template",
+  "max_length": 256,
+  "micro_batch_size": 1,
+  "gradient_accumulation": 8,
+  "epochs": 3,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.03,
+  "lora_rank": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+  "quantization": "nf4_double_quant_fp16_compute",
+  "loss": "unweighted_cross_entropy",
+  "optimizer": "adamw",
+  "evaluation": "final_epoch_only_no_epoch_or_threshold_selection",
+  "fixed_fusion": "row_z_E24_E0c_plus_row_z_RoBERTa_plus_mean_three_row_z_ModernBERT_plus_1x_row_z_E28_logits",
+  "promotion_gate": {
+    "reference": "fixed_E24_fusion",
+    "fixed_added_branch_weight": 1.0,
+    "min_balanced_accuracy_delta": 0.01,
+    "min_non_decreasing_folds": 4,
+    "max_allowed_class_recall_drop": 0.05,
+    "paired_prompt_bootstrap_repeats": 20000
+  },
+  "package_versions": {
+    "torch_prefix": "2.6.0",
+    "transformers": "4.51.3",
+    "peft": "0.15.2",
+    "accelerate": "1.6.0",
+    "bitsandbytes": "0.45.5"
+  }
+}
