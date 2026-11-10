@@ -22,7 +22,7 @@
 
 脚本 [run_e28_qwen8b_lora_feasibility.py](../run_e28_qwen8b_lora_feasibility.py) 实现 `preflight` 与受完整快照守卫的 `resource`；前者的机器报告存于本地与服务器的 `outputs/e28_qwen8b_preflight/preflight.json`：`model_complete=false`、官方训练 SHA 正确、锁定依赖版本齐全、`CUDA_VISIBLE_DEVICES=2` 下只看见 1 块卡。脚本通过 Python 语法检查。**没有启动 GPU 训练、没有得到单折时间/显存或 4,000 行推理指标，也没有计算验证准确率。** 未来如权重可通过稳定通路完整取得，应先重新做资源测试，再决定是否开展五折；当前不能声称 8B LoRA 比现有方案有效或 Kaggle 离线可运行。
 
-## 2026-11-10 官方镜像恢复通路：下载中
+## 2026-11-10 官方镜像恢复通路：下载完成，资源测试中
 
 [Qwen 官方 Qwen3 README](https://github.com/QwenLM/Qwen3) 明确建议中国大陆用户使用 [ModelScope 官方 `Qwen/Qwen3-8B`](https://modelscope.cn/models/Qwen/Qwen3-8B)。从 [Hugging Face 固定 revision 文件树](https://huggingface.co/api/models/Qwen/Qwen3-8B/tree/b968826d9c46dd6066d109eabc6255188de91218?recursive=true) 与 [ModelScope 文件清单 API](https://modelscope.cn/api/v1/models/Qwen/Qwen3-8B/repo/files?Revision=master&Recursive=true) 逐项核对，五个权重分片（大小分别为 3,996,250,744、3,993,160,032、3,959,604,768、3,187,841,392、1,244,659,840 bytes）及 `tokenizer.json` 的 SHA-256 和大小完全相同。`config.json`、`generation_config.json`、`model.safetensors.index.json`、`tokenizer_config.json`、`vocab.json`、`LICENSE` 也已从两站实际下载并做字节级 SHA-256 比较，完全一致。因此该镜像可提供**同一锁定权重**，无需换模型；ModelScope 仓库中的 `.gitattributes` 等平台元数据并非运行所需文件，不纳入模型快照。
 
@@ -39,9 +39,9 @@ $serverAlias = 'your-configured-server-alias'
 ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namethatllm/data/models/qwen3-8b-b968826d; tail -n 12 /path/to/namethatllm/outputs/e28_mirror_download/download.log'
 ```
 
-完成信号为日志出现 `COMPLETE`，且 `data/models/qwen3-8b-b968826d/e28_mirror_manifest.json` 出现 `all_sha256_verified: true`（13 个运行文件）。只有此后再次检查 GPU2 空闲、运行 E28 资源脚本的 SHA-256 守卫通过，才可启动折 1 的单 epoch 资源试验；目前没有启动 GPU 作业。
+完成信号为日志出现 `COMPLETE`，且 `data/models/qwen3-8b-b968826d/e28_mirror_manifest.json` 出现 `all_sha256_verified: true`（13 个镜像文件）。2026-11-10 09:05 UTC 下载器报告 `COMPLETE`，用时 8,517.7 秒。watcher 随后重新计算训练所需 10 个文件的本地 SHA-256，09:06 UTC 报告 `HASH_CHECK_PASS`；检查物理 GPU2 空闲后启动折 1 单 epoch 资源试验。
 
-### 一次性资源测试接力（已设置，等待下载）
+### 一次性资源测试接力（已启动）
 
 [watch_e28_qwen3_resource.py](../watch_e28_qwen3_resource.py) 已作为后台 PID `1219155` 启动，通用脚本以 `--download-pid` 指定下载进程。它每 60 秒只读检查上述 `COMPLETE` 和 manifest；若下载进程提前退出或等待超过 4 小时，则写入 `WATCHER_ABORT` 并退出。完成后逐项核验固定 revision、13 个运行文件的 manifest，并调用 E28 `verify_model_dir` **从本地文件重新计算全部必需文件 SHA-256**。随后再次确认物理 GPU2 显存 ≤256 MiB、利用率 0、无 CUDA compute PID；任一检查失败即退出，不换 GPU、不改参数。资源入口本身还会在加载 CUDA 模型前再次核验文件哈希与可用显存。
 
@@ -50,3 +50,5 @@ ssh $serverAlias 'ps -p 1217581 -o pid=,etime=,stat=,cmd=; du -sb /path/to/namet
 首次资源运行前的静态审查将显存门槛改为含模型加载的 `max_memory_reserved`，推理峰值也从 adapter 重载前开始测量，并新增至少 95% 优化器更新成功的判定。watcher 使用进程持有的 Linux 文件锁，退出时自动释放，防止重启竞态；若资源报告 `gate_passed=false`，它以失败状态退出，不产生成功信号。原始训练与推理超参、数据和折号均未改动。更新后的 watcher 与资源脚本须先同步到服务器，再允许启动子进程。
 
 更新后的两个脚本已在服务器通过语法检查、与本地 SHA-256 一致；旧 watcher 已单独停止，下载进程保持运行。新 watcher PID `1220059` 在 2026-11-10 08:17 UTC 启动，日志显示 `WATCHER_START`，资源日志尚未出现。此时模型目录约 11.78 GB，仍在下载，未启动 GPU 作业。
+
+截至 09:07 UTC，`resource.log` 已显示五个分片装载和新建 18 类分类头；GPU2 约 8.18 GiB、93% 利用率，与资源试验已开始相符。**尚无完整单 epoch、4,000 行推理或资源门槛报告，也没有 E28 验证分数。**

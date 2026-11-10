@@ -1,6 +1,6 @@
 # E30：Qwen3-Embedding-8B 监督分类分支设计
 
-**状态：预注册脚本与数据预检完成；尚未下载此模型、训练或取得 E30 分数。** 与 [E28 生成基座 QLoRA](e28_qwen8b_lora_feasibility.md)分开编号、分开评估；不得拿 E28 的模型权重或资源数据充当 E30 结果。
+**状态：v3 预注册与 CPU 预检完成，固定权重快照正在下载；尚未训练或取得 E30 分数。** 与 [E28 生成基座 QLoRA](e28_qwen8b_lora_feasibility.md)分开编号、分开评估；不得拿 E28 的模型权重或资源数据充当 E30 结果。
 
 ## 动机与证据
 
@@ -27,13 +27,13 @@ Qwen 的[官方模型卡](https://huggingface.co/Qwen/Qwen3-Embedding-8B)列出 
 
 同一 v3 配置和脚本已在本地与服务器分别完成 CPU-only `preflight`，两份新锁的脚本 SHA-256 同为 `82c99f7211cbbd7cc0dc5e64b5bac568a25855e42d55c08078cf6a76056ce375`；官方训练、E0 manifest 和 E0 OOF 哈希一致，开发分区为 2,160 行/120 prompt，五折各 432 行。此步骤没有加载 E30 权重、使用 GPU 或计算验证准确率。之后任何训练逻辑改动都会使该锁失效，须另建协议版本。
 
-[Qwen 官方 tokenizer 变更说明](https://huggingface.co/Qwen/Qwen3-Embedding-8B/discussions/1)确认用于末位池化的自动追加 token 是 `<|endoftext|>`；固定提交的 [`tokenizer_config.json`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/blob/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af/tokenizer_config.json)把它设为 pad token，而通用 `eos_token` 为 `<|im_end|>`。脚本检查实际编码最后一个非填充位置是被 attention mask 标记为有效的 `<|endoftext|>`，避免把聊天 EOS 错当池化位置。服务器已用官方镜像的 11 MB tokenizer 与两份小配置文件完成 CPU smoke test，得到池化 token ID 151643、attention mask 1；尚未下载 E30 权重。
+[Qwen 官方 tokenizer 变更说明](https://huggingface.co/Qwen/Qwen3-Embedding-8B/discussions/1)确认用于末位池化的自动追加 token 是 `<|endoftext|>`；固定提交的 [`tokenizer_config.json`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/blob/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af/tokenizer_config.json)把它设为 pad token，而通用 `eos_token` 为 `<|im_end|>`。脚本检查实际编码最后一个非填充位置是被 attention mask 标记为有效的 `<|endoftext|>`，避免把聊天 EOS 错当池化位置。服务器已用官方镜像的 11 MB tokenizer 与两份小配置文件完成 CPU smoke test，得到池化 token ID 151643、attention mask 1；随后才开始权重下载。
 
 模型快照获取须使用上述**完整提交哈希**，保存至本地目录。训练环境按配置固定依赖版本，并在确认显卡空闲后只暴露一张 RTX 3090。资源阶段只训练折 1 的训练侧一个 epoch，随后重新加载 adapter，使用训练侧回答重复构成 4,000 条**无标签代理文本**测试单 adapter 的完整推理吞吐。计划中的 Kaggle 部署以一个全量训练 adapter 推理；五折 adapter 仅用于开发 OOF，若日后改用五折集成，必须另测约五次加载和五倍前向的完整包。资源报告同时记录该五折时间估计，但它不证明 Kaggle 隐藏测试耗时。训练与推理显存峰值都使用保留量，推理峰值从 adapter 重载前开始计。资源门槛为训练峰值保留显存 <22 GiB、推理峰值保留显存 <22 GiB、至少 95% 计划优化器更新成功、单 epoch ≤1 小时、外推 3 epoch ≤3 小时、单 adapter 4,000 条推理 ≤3 小时；失败即停止。不能把这一折的结果称为五折提升。
 
 GPU 命令在逐文件重算完整模型哈希后、加载模型前再次通过 `nvidia-smi` 核对指定的**物理 GPU UUID**：须为 RTX 3090、已用显存 ≤256 MiB、利用率 0%、无计算进程；随后确认 PyTorch 仅识别该一张 RTX 3090 且空闲显存 ≥22 GiB。任何条件不满足即停止。CPU-only `preflight` 不查询 GPU。
 
-官方镜像的逐文件核对与显式下载命令见 [E30 权重预检](e30_embedding8b_mirror_preflight.md)。E28 大文件下载期间不启动 E30 大文件下载。
+官方镜像的逐文件核对与显式下载命令见 [E30 权重预检](e30_embedding8b_mirror_preflight.md)。E28 大文件下载及其独立哈希检查完成、资源试验启动后，才开始 E30 的独立权重下载；E30 不使用 GPU。
 
 ```bash
 python run_e30_supervised_embedding8b.py preflight

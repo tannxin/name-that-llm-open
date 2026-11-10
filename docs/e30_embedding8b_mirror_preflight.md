@@ -1,6 +1,6 @@
 # E30 官方 Qwen3-Embedding-8B 镜像预检与获取通路
 
-**状态（2026-11-10）：已核对两站元数据，并在服务器下载和验证 11 MB tokenizer 与两份小配置以完成 CPU 池化检查；未下载权重、未运行 GPU、未训练 E30。**
+**状态（2026-11-10）：两站元数据及 11 MB tokenizer 的 CPU 池化检查通过，固定提交的四片权重正在服务器下载；未运行 E30 GPU、未训练、无 E30 分数。**
 
 E30-A 使用 [Qwen 官方 Hugging Face `Qwen/Qwen3-Embedding-8B`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/tree/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af) 的不可变提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`，镜像选择 [Qwen 官方 ModelScope 同名仓库](https://www.modelscope.cn/models/Qwen/Qwen3-Embedding-8B) 的 Git 提交 `fcd9221ff0c460fdd81bfd04f4bc5b014e58da5b`。两站均标 Apache-2.0。该仓库是 **embedding 模型**，不能与 E28 的 `Qwen/Qwen3-8B` 生成模型或 Kaggle 的 `8b-base` 混用。
 
@@ -12,7 +12,7 @@ ModelScope 提交由官方仓库的 `git ls-remote` 解析得出。已验证文�
 
 修订后的独立下载脚本 `check --verify-hf` 已在本地实际运行通过，输出两站固定提交、9 个匹配文件、合计 15,146,107,275 字节，并明确标记 `weights_downloaded: false`。该检查不代表权重已在服务器落盘。
 
-服务器上也已运行不取权重的 `check`：固定 ModelScope 提交返回 9 个匹配文件，合计 15,146,107,275 字节，`weights_downloaded: false`。随后显式运行 `tokenizer-smoke`，只获取 `config.json`、`tokenizer_config.json`、`tokenizer.json`，逐项 SHA-256 通过；官方 tokenizer 实际追加的 `<|endoftext|>` ID 151643 在 attention mask 中为 1，符合 E30 末位池化规则。服务器可以访问该镜像；E28 大文件下载期间仍不启动 E30 大文件下载。
+服务器上也已运行不取权重的 `check`：固定 ModelScope 提交返回 9 个匹配文件，合计 15,146,107,275 字节，`weights_downloaded: false`。随后显式运行 `tokenizer-smoke`，只获取 `config.json`、`tokenizer_config.json`、`tokenizer.json`，逐项 SHA-256 通过；官方 tokenizer 实际追加的 `<|endoftext|>` ID 151643 在 attention mask 中为 1，符合 E30 末位池化规则。E28 的 13 个镜像文件全部下载和校验、独立哈希及 GPU 交接完成后，才启动 E30 的四片权重下载。
 
 | 文件 | 字节数 | SHA-256 |
 | --- | ---: | --- |
@@ -44,4 +44,4 @@ python download_e30_qwen3_embedding_mirror.py download \
 
 训练服务器访问 Hugging Face 可能出现 DNS 失败；在这种情况下，`check --verify-hf` 无法完成实时跨站复核，但固定提交的两站字节比对已于 2026-11-10 在可访问环境完成。`download` 只要求 ModelScope 实时清单与已经跨站核对的固定值一致，因而不会因 Hugging Face 临时不可达而改用未审计权重。
 
-模型目录位于 Git 忽略的 `data/` 下。获取完成后再运行 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py) 的资源门槛；它会再次核对权重与 tokenizer 哈希，然后仅在 GPU 空闲时做单折资源测试。E28 下载正在进行时不要同时启动 E30 大文件下载，以免争用带宽和磁盘。
+模型目录位于 Git 忽略的 `data/` 下。2026-11-10 09:07 UTC，后台下载 PID `1221761` 已开始，启动记录显示已校验的 tokenizer 与小配置被跳过、剩余需传输约 15.135 GB；完整权重和最终 manifest 尚未落盘。获取完成后再运行 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py) 的资源门槛；它会再次核对权重与 tokenizer 哈希，然后仅在 GPU 空闲时做单折资源测试。E30 下载本身不使用 GPU。
