@@ -11,6 +11,8 @@
 
 **决定：没有发现一个新来源同时满足独立生成/筛选与 E24 式逐行身份核验，本轮不给 E0c 或 GPU 训练新增外部行。** 这不否定公开回答本身；只是现有证据不足以把来源自带标签当成比赛 18 个精确快照。E24 的已审计清单、E29 Qwen 0902 敏感性负结果和 30-prompt 保留集边界保持原样。
 
+后续只读核查见 [P1-3 Oleg 来源预审](p1_3_oleg_corpus_provenance_audit.md)：其 18 类外部回答语料虽然规模大，Speechmap 和 Woog 的来源目录声称有请求及返回模型，但原始逐次请求/路由日志或输出许可尚不足以通过本项目门槛，严格准入仍为 0 行。另一个独立提示线索 [Model Spec Evals](https://github.com/Michel-Justen/Model-Spec-Evals) 声称保留原始 `.eval` 日志；仓库未声明生成回答许可证，[请求检查脚本](https://github.com/Michel-Justen/Model-Spec-Evals/blob/main/src/verify_requests.py)默认仅查 5 条且不核查逐条返回模型，[导出脚本](https://github.com/Michel-Justen/Model-Spec-Evals/blob/main/src/export_reasoning.py)使用命令行标签和日志头模型名，故当前同样为 0 行。原始提示的 [CC0 许可](https://github.com/openai/model_spec_dataset)不能自动覆盖后续生成回答。
+
 ## 若取得原始证据，先做的小规模筛查
 
 1. 在看任何验证分数前冻结公开版本、文件 SHA、许可证、独立提示许可与每条 `call_id → 原请求/逐字提示/路由参数 → 原响应模型/服务商/回答/停止状态` 映射；对 Qwen 等别名另记比赛目标快照未知。原始生成或筛选若使用了全部官方 150 个提示/2,699 条回答的标签驱动信息，不能声称严格独立五折。
