@@ -8,7 +8,7 @@
 | **E40：训练侧同题风格残差** | 只在训练折按已知提示去掉 57 维风格均值，测试无需提示 ID。固定差分加入 E24 后 BA **0.4250→0.4190**。 | **已完成，No-go**；2/5 折不降。[结果](e40_prompt_residual_style_results.md) |
 | **E39：Qwen3-8B-Base LoRA** | E28 是 `Qwen3-8B`，不是 [Base 权重](https://huggingface.co/Qwen/Qwen3-8B-Base)；公开[参赛者实验](https://github.com/PiKa919/kaggle-name-that-llm)提示 Base LoRA 可能是更有力的新分数路。只换骨干，沿用官方数据、E28 类别损失/长度/LoRA 日程。 | 固定模型与[单折资源门槛](e39_qwen3_base_resource_results.md)已独立审计通过；五折首次启动在训练前被另一作业抢占 GPU2，未产生分数。恢复脚本已审查，等待连续独占时段；公开参赛者分数不作为我们模型的预期结果。 |
 | **公开高分工件复现** | 检查公开 0.679–0.680 Notebook 所需权重、许可、模型输入和完整隐藏推理资源，建立可运行参考。 | **只读资源核查并行**；公开预训练工件可能用过全部官方标签，不能并入我们的五折 OOF 比较。若可运行，单独评估并清楚标注外部参考，不把原作者成绩写成我们的实验增量。 |
-| **E41：DeBERTa-v3-large** | 将 E14 的 DeBERTa-v3-base 只换为 [large 版](https://huggingface.co/microsoft/deberta-v3-large)，保持官方折、256 tokens、原损失与 12 epoch；也与公开 V63 的一个骨干同类。 | [资源协议已预登记](e41_deberta_v3_large_preregistration.md)，固定模型与 CPU 预检通过。第一次 GPU0 探针因脚本梯度检查比 E14 严格而在早期中止，未得资源结论；修正版恢复原语义，等 GPU0 空闲后重测。 |
+| **E41：DeBERTa-v3-large** | 将 E14 的 DeBERTa-v3-base 只换为 [large 版](https://huggingface.co/microsoft/deberta-v3-large)，保持官方折、256 tokens、原损失与 12 epoch；也与公开 V63 的一个骨干同类。 | 修正版[单折资源门槛](e41_deberta_v3_large_resource_results.md)已独立审核通过；首次探针脚本错误与修正均留证。性能五折脚本和守护启动器正在独立审核，尚无验证分数。 |
 | **下一路大语言模型** | [Qwen3-14B-Base](https://huggingface.co/Qwen/Qwen3-14B-Base) 是 29.54 GB、Apache-2.0 的可获取异构骨干；Llama 8B 另需门控访问与独立许可。 | E39 资源和离线信号确认后优先评估 14B；3090 通过也必须另验 Kaggle T4×2 显存和耗时，不把模型数量当作收益证据。 |
 | **独立来源数据** | [Oleg 语料](p1_3_oleg_corpus_provenance_audit.md)及 [Open Pool v16 与四个上游来源](p1_4_pool_v16_source_audit.md)已复查，逐次请求/路由或独立筛选证据仍不足，新增严格准入 0 行。 | 继续寻求可核验的原始调用与独立提示；若取得证据，先锁来源版本、行级映射、许可和固定每类权重，用[单源 E0c 筛查](p1_2_external_source_refresh_2026-11-11.md)检验，再考虑 GPU。 |
 
