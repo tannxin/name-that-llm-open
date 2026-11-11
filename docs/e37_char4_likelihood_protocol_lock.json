@@ -1,0 +1,50 @@
+{
+  "experiment": "e37_char4_conditional_likelihood",
+  "protocol_version": 1,
+  "stage": "prospective_cpu_lock_before_any_e37_validation_scores",
+  "locked_at_utc": "2026-11-11T01:24:04+00:00",
+  "fingerprint": {
+    "code_and_protocol_sha256": {
+      "script": "3377e7d8d7da1af6feb92fc22399690e5bacdfd9e9f7c15c02c2e21a89568a3c",
+      "config": "a156fec2b6196af2da26a71cc365c1639dae92f29cbe1273ece0f45005c9eb1f",
+      "preregistration": "5a6a14447bc047685b88f421a4efb1138fc28e69f8dd19d049c17b317d6d4f24",
+      "run_e0": "635841b90bc164a1b851dc8e8c5c575a591bf6d4416d06b7450c47df300a5c27",
+      "run_fixed_blend": "e4adfb849f87ed4ee90da758b43236776fa11ff51e36d7ef003ae3f5ac16abe4",
+      "run_score_normalization": "b792d6a27d113d1e84dc24bfdd6eb19c39f5f457bc5e407fca91edb23d1e78d1"
+    },
+    "official_train_sha256": "40a22ce8d88c5f46feb4637a099db815bef5f713ffe53e89dbe1b7b21de77707",
+    "e0_split_manifest_sha256": "653c23b191b40086f7a0263a9baee1e519c0778de7bd0c721b23e1a9955ffd15",
+    "e0_oof_sha256": "698265e92c50f23acc6eb68731721249a27a5966e30b62c4eed3c0a30c3528fa",
+    "e24_metrics_sha256": "301463b680bbf83a46bc106ff273e64db853358e131b29c40410a88f8770a557",
+    "e24_saved_oof_sha256": "8230d7438eb6c0df7015edc61a54cf880904b85d1f8d599fd549a57e357b4448",
+    "e24_source_sha256": {
+      "e24_sparse": "845c657f03b761f7b8f62fc17a2da583b6ecfd5962d5be1ae6fe485e5a9c3575",
+      "roberta": "86c6621058dc630b690bc21a58b5767872466c416395c02c327491b8b16c80cd",
+      "modern_42": "0ebf57806393d5175842ae66e2c18080f0c536f40a26e06e3063fc31097ce233",
+      "modern_17": "da391ea077c200e9735237183cf02f7d57b5b809685b437d37b5e0ef3346c189",
+      "modern_73": "23de22abb848effb851fd2f079283d6c726a2d8f9c339920a227d4b981989ba8"
+    },
+    "runtime": {
+      "python": "3.12.4",
+      "numpy": "2.1.2",
+      "pandas": "2.2.3",
+      "scipy": "1.14.1",
+      "sklearn": "1.5.2",
+      "platform": "Windows-10-10.0.19045-SP0"
+    }
+  },
+  "preflight": {
+    "development_rows": 2160,
+    "development_prompts": 120,
+    "holdout_prompts_excluded": 30,
+    "folds": 5,
+    "min_development_characters": 230,
+    "max_development_characters": 1875,
+    "total_development_fourgram_occurrences": 1625138,
+    "holdout_text_loaded": false
+  },
+  "e37_validation_scores_read": false,
+  "old_e24_score_values_read_at_lock": false,
+  "gpu_used": false,
+  "holdout_or_test_scored": false
+}

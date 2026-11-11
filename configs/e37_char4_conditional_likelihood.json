@@ -1,0 +1,20 @@
+{
+  "experiment": "e37_char4_conditional_likelihood",
+  "protocol_version": 1,
+  "seed": 42,
+  "ngram_length": 4,
+  "max_features": 100000,
+  "alpha": 1.0,
+  "temperatures": [1.0, 2.0, 4.0, 8.0],
+  "primary_readout": "mean_over_temperatures_of_mean_over_four_character_occurrences_of_clipped_relative_likelihood",
+  "secondary_readout": "mean_log_likelihood",
+  "fixed_e24_fusion_coefficient": 1.0,
+  "minimum_fusion_balanced_accuracy_delta": 0.01,
+  "minimum_non_decreasing_folds": 4,
+  "maximum_allowed_class_recall_drop_exclusive": 0.05,
+  "bootstrap_prompt_repeats": 20000,
+  "max_text_characters": 10000,
+  "max_peak_rss_gib": 4.0,
+  "max_seconds_per_fold": 900,
+  "max_seconds_total": 3600
+}

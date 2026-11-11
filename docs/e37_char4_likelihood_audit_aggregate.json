@@ -1,0 +1,14 @@
+{
+  "audit_passed": true,
+  "protocol_lock_sha256": "c0731c3058f112ceb4f70b149e498f67d3ccac1815389a39916528e3830893d9",
+  "oof_scores_sha256": "cd427e4d24d28b2dd0f89fd7bab1f8bdbab279fdb3ccc9fbf599aef1d3ff129a",
+  "metrics_sha256": "3ccc582e01bb2420d253657507acdccfc94e0b5982c64d08aedc3694e96c2b37",
+  "rows": 2160,
+  "prompts": 120,
+  "folds": 5,
+  "all_e24_predictions_reproduced": true,
+  "all_saved_e37_predictions_reproduced": true,
+  "all_fold_and_class_metrics_reproduced": true,
+  "resources_within_locked_limits": true,
+  "mechanism_preflight_gate_passed": false
+}
