@@ -1,0 +1,291 @@
+{
+  "experiment": "e36_fixed_e24_e28_e30_triple_fusion",
+  "stage": "five_fold_oof_analysis",
+  "protocol_lock_sha256": "d6e2c1625a8b6779a8854d54c2a6db1603784fe6dcd529123b45d6dfa7470d96",
+  "input_sha256": {
+    "e28_oof": "9243bb2002158c3f3078fcbba6f8746db71c75ee2ac2807a6789104b4d310d64",
+    "e28_metrics": "ae4e073357f7b33946d526d87c42c33fa74e33f551c63c5a97c1dfe21479f98f",
+    "e30_oof": "0feb265eb77dab60206db3ad1c7ca469724d32a52562567efa284af8532d266d",
+    "e30_metrics": "77cba0bdb60d7b720493bc54517c8cf3825ceff4698060567642fa52e4425065"
+  },
+  "rows": 2160,
+  "prompts": 120,
+  "labels": [
+    "gpt-5.5",
+    "gpt-5.6-luna",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-6-astra",
+    "gemini-3.1-pro-preview",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "claude-fable-5",
+    "claude-opus-4-6",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "qwen3.8-max",
+    "glm-5.3",
+    "glm-5.3-flash",
+    "kimi-k3"
+  ],
+  "balanced_accuracy": {
+    "e24_fixed": 0.42500000000000004,
+    "e24_plus_e28": 0.43425925925925923,
+    "e24_plus_e30": 0.4486111111111112,
+    "triple": 0.44861111111111107
+  },
+  "fold_metrics": [
+    {
+      "fold": 1,
+      "e24_fixed": 0.4050925925925926,
+      "e24_plus_e28": 0.4050925925925926,
+      "e24_plus_e30": 0.4305555555555555,
+      "triple": 0.4305555555555556
+    },
+    {
+      "fold": 2,
+      "e24_fixed": 0.4166666666666667,
+      "e24_plus_e28": 0.4328703703703704,
+      "e24_plus_e30": 0.4421296296296296,
+      "triple": 0.43749999999999994
+    },
+    {
+      "fold": 3,
+      "e24_fixed": 0.462962962962963,
+      "e24_plus_e28": 0.462962962962963,
+      "e24_plus_e30": 0.4722222222222222,
+      "triple": 0.4629629629629629
+    },
+    {
+      "fold": 4,
+      "e24_fixed": 0.4050925925925926,
+      "e24_plus_e28": 0.42361111111111105,
+      "e24_plus_e30": 0.43287037037037035,
+      "triple": 0.44675925925925924
+    },
+    {
+      "fold": 5,
+      "e24_fixed": 0.4351851851851852,
+      "e24_plus_e28": 0.44675925925925924,
+      "e24_plus_e30": 0.4652777777777778,
+      "triple": 0.4652777777777778
+    }
+  ],
+  "class_metrics": [
+    {
+      "model": "gpt-5.5",
+      "support": 120,
+      "e24_fixed_recall": 0.35,
+      "e24_plus_e28_recall": 0.4,
+      "e24_plus_e30_recall": 0.38333333333333336,
+      "triple_recall": 0.39166666666666666
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "support": 120,
+      "e24_fixed_recall": 0.49166666666666664,
+      "e24_plus_e28_recall": 0.5,
+      "e24_plus_e30_recall": 0.5416666666666666,
+      "triple_recall": 0.5416666666666666
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "support": 120,
+      "e24_fixed_recall": 0.21666666666666667,
+      "e24_plus_e28_recall": 0.2833333333333333,
+      "e24_plus_e30_recall": 0.21666666666666667,
+      "triple_recall": 0.26666666666666666
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "support": 120,
+      "e24_fixed_recall": 0.325,
+      "e24_plus_e28_recall": 0.30833333333333335,
+      "e24_plus_e30_recall": 0.31666666666666665,
+      "triple_recall": 0.3
+    },
+    {
+      "model": "gpt-6-astra",
+      "support": 120,
+      "e24_fixed_recall": 0.75,
+      "e24_plus_e28_recall": 0.7083333333333334,
+      "e24_plus_e30_recall": 0.7416666666666667,
+      "triple_recall": 0.7166666666666667
+    },
+    {
+      "model": "gemini-3.1-pro-preview",
+      "support": 120,
+      "e24_fixed_recall": 0.8166666666666667,
+      "e24_plus_e28_recall": 0.8083333333333333,
+      "e24_plus_e30_recall": 0.8333333333333334,
+      "triple_recall": 0.8083333333333333
+    },
+    {
+      "model": "gemini-3.6-flash",
+      "support": 120,
+      "e24_fixed_recall": 0.5833333333333334,
+      "e24_plus_e28_recall": 0.5833333333333334,
+      "e24_plus_e30_recall": 0.6083333333333333,
+      "triple_recall": 0.6
+    },
+    {
+      "model": "gemini-3.7-flash",
+      "support": 120,
+      "e24_fixed_recall": 0.35,
+      "e24_plus_e28_recall": 0.35833333333333334,
+      "e24_plus_e30_recall": 0.3416666666666667,
+      "triple_recall": 0.325
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "support": 120,
+      "e24_fixed_recall": 0.31666666666666665,
+      "e24_plus_e28_recall": 0.30833333333333335,
+      "e24_plus_e30_recall": 0.30833333333333335,
+      "triple_recall": 0.30833333333333335
+    },
+    {
+      "model": "claude-fable-5",
+      "support": 120,
+      "e24_fixed_recall": 0.21666666666666667,
+      "e24_plus_e28_recall": 0.25,
+      "e24_plus_e30_recall": 0.24166666666666667,
+      "triple_recall": 0.25833333333333336
+    },
+    {
+      "model": "claude-opus-4-6",
+      "support": 120,
+      "e24_fixed_recall": 0.675,
+      "e24_plus_e28_recall": 0.6833333333333333,
+      "e24_plus_e30_recall": 0.7083333333333334,
+      "triple_recall": 0.7166666666666667
+    },
+    {
+      "model": "claude-opus-4-8",
+      "support": 120,
+      "e24_fixed_recall": 0.39166666666666666,
+      "e24_plus_e28_recall": 0.4,
+      "e24_plus_e30_recall": 0.44166666666666665,
+      "triple_recall": 0.425
+    },
+    {
+      "model": "claude-opus-5",
+      "support": 120,
+      "e24_fixed_recall": 0.6,
+      "e24_plus_e28_recall": 0.6,
+      "e24_plus_e30_recall": 0.6666666666666666,
+      "triple_recall": 0.65
+    },
+    {
+      "model": "claude-sonnet-5",
+      "support": 120,
+      "e24_fixed_recall": 0.38333333333333336,
+      "e24_plus_e28_recall": 0.36666666666666664,
+      "e24_plus_e30_recall": 0.4,
+      "triple_recall": 0.4166666666666667
+    },
+    {
+      "model": "qwen3.8-max",
+      "support": 120,
+      "e24_fixed_recall": 0.475,
+      "e24_plus_e28_recall": 0.5083333333333333,
+      "e24_plus_e30_recall": 0.55,
+      "triple_recall": 0.5583333333333333
+    },
+    {
+      "model": "glm-5.3",
+      "support": 120,
+      "e24_fixed_recall": 0.2,
+      "e24_plus_e28_recall": 0.19166666666666668,
+      "e24_plus_e30_recall": 0.20833333333333334,
+      "triple_recall": 0.225
+    },
+    {
+      "model": "glm-5.3-flash",
+      "support": 120,
+      "e24_fixed_recall": 0.25,
+      "e24_plus_e28_recall": 0.25833333333333336,
+      "e24_plus_e30_recall": 0.275,
+      "triple_recall": 0.24166666666666667
+    },
+    {
+      "model": "kimi-k3",
+      "support": 120,
+      "e24_fixed_recall": 0.25833333333333336,
+      "e24_plus_e28_recall": 0.3,
+      "e24_plus_e30_recall": 0.2916666666666667,
+      "triple_recall": 0.325
+    }
+  ],
+  "strongest_fixed_comparator": "e24_plus_e30",
+  "triple_minus_strongest": {
+    "balanced_accuracy_delta": -1.1102230246251565e-16,
+    "non_decreasing_folds": 3,
+    "worst_class_recall_delta": -0.033333333333333354,
+    "gate": {
+      "delta_at_least_0_01": false,
+      "at_least_four_folds_non_decreasing": false,
+      "no_class_recall_drop_at_least_0_05": true
+    },
+    "gate_passed": false
+  },
+  "triple_vs_each_comparator": {
+    "e24_fixed": {
+      "balanced_accuracy_delta": 0.023611111111111027,
+      "prediction_changed": 359,
+      "wrong_to_right": 122,
+      "right_to_wrong": 71,
+      "wrong_to_different_wrong": 166,
+      "paired_prompt_bootstrap": {
+        "difference": 0.023611111111111027,
+        "confidence_interval_95": [
+          0.012962962962962898,
+          0.03472222222222221
+        ],
+        "bootstrap_unit": "prompt_id",
+        "repeats": 20000,
+        "seed": 42
+      }
+    },
+    "e24_plus_e28": {
+      "balanced_accuracy_delta": 0.014351851851851838,
+      "prediction_changed": 202,
+      "wrong_to_right": 70,
+      "right_to_wrong": 39,
+      "wrong_to_different_wrong": 93,
+      "paired_prompt_bootstrap": {
+        "difference": 0.014351851851851838,
+        "confidence_interval_95": [
+          0.005555555555555591,
+          0.02314814814814814
+        ],
+        "bootstrap_unit": "prompt_id",
+        "repeats": 20000,
+        "seed": 42
+      }
+    },
+    "e24_plus_e30": {
+      "balanced_accuracy_delta": -1.1102230246251565e-16,
+      "prediction_changed": 207,
+      "wrong_to_right": 61,
+      "right_to_wrong": 61,
+      "wrong_to_different_wrong": 85,
+      "paired_prompt_bootstrap": {
+        "difference": -1.1102230246251565e-16,
+        "confidence_interval_95": [
+          -0.008796296296296358,
+          0.008796296296296302
+        ],
+        "bootstrap_unit": "prompt_id",
+        "repeats": 20000,
+        "seed": 42
+      }
+    }
+  },
+  "holdout_evaluated": false,
+  "test_evaluated": false,
+  "fusion_weight_or_threshold_tuned": false,
+  "row_level_predictions_exported": false
+}

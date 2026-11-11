@@ -1,6 +1,6 @@
 # E30 官方 Qwen3-Embedding-8B 镜像预检与获取通路
 
-**状态（2026-11-10）：两站元数据及 11 MB tokenizer 的 CPU 池化检查通过，固定提交的四片权重正在服务器下载；未运行 E30 GPU、未训练、无 E30 分数。**
+**状态（2026-11-11）：固定提交的九个必需文件已下载并重新核对 SHA-256；E30-A 资源测试与官方开发集五折已完成。性能和部署边界见[五折独立审计](e30_embedding8b_fivefold_results.md)。** 下文保留下载前的预检与续传记录作为审计轨迹。
 
 E30-A 使用 [Qwen 官方 Hugging Face `Qwen/Qwen3-Embedding-8B`](https://huggingface.co/Qwen/Qwen3-Embedding-8B/tree/1d8ad4ca9b3dd8059ad90a75d4983776a23d44af) 的不可变提交 `1d8ad4ca9b3dd8059ad90a75d4983776a23d44af`，镜像选择 [Qwen 官方 ModelScope 同名仓库](https://www.modelscope.cn/models/Qwen/Qwen3-Embedding-8B) 的 Git 提交 `fcd9221ff0c460fdd81bfd04f4bc5b014e58da5b`。两站均标 Apache-2.0。该仓库是 **embedding 模型**，不能与 E28 的 `Qwen/Qwen3-8B` 生成模型或 Kaggle 的 `8b-base` 混用。
 
@@ -44,4 +44,4 @@ python download_e30_qwen3_embedding_mirror.py download \
 
 训练服务器访问 Hugging Face 可能出现 DNS 失败；在这种情况下，`check --verify-hf` 无法完成实时跨站复核，但固定提交的两站字节比对已于 2026-11-10 在可访问环境完成。`download` 只要求 ModelScope 实时清单与已经跨站核对的固定值一致，因而不会因 Hugging Face 临时不可达而改用未审计权重。
 
-模型目录位于 Git 忽略的 `data/` 下。2026-11-10 09:07 UTC，后台下载 PID `1221761` 已开始，启动记录显示已校验的 tokenizer 与小配置被跳过、剩余需传输约 15.135 GB；完整权重和最终 manifest 尚未落盘。获取完成后再运行 [`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py) 的资源门槛；它会再次核对权重与 tokenizer 哈希，然后仅在 GPU 空闲时做单折资源测试。E30 下载本身不使用 GPU。
+模型目录位于 Git 忽略的 `data/` 下。2026-11-10 09:07 UTC，后台下载 PID `1221761` 开始，当时已校验的 tokenizer 与小配置被跳过、剩余需传输约 15.135 GB。完整权重随后通过哈希核对；[`run_e30_supervised_embedding8b.py`](../run_e30_supervised_embedding8b.py) 的资源阶段再次核对模型文件，并在空闲 GPU 上通过门槛。五折汇总于 2026-11-10 23:40 UTC 完成，见[独立审计](e30_embedding8b_fivefold_results.md)。E30 下载本身没有使用 GPU。
