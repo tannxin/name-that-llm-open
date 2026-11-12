@@ -10,6 +10,6 @@
 | **公开高分工件复现** | 检查公开 0.679–0.680 Notebook 所需权重、许可、模型输入和完整隐藏推理资源，建立可运行参考。 | **只读资源核查并行**；公开预训练工件可能用过全部官方标签，不能并入我们的五折 OOF 比较。若可运行，单独评估并清楚标注外部参考，不把原作者成绩写成我们的实验增量。 |
 | **E41：DeBERTa-v3-large** | 将 E14 的 DeBERTa-v3-base 只换为 [large 版](https://huggingface.co/microsoft/deberta-v3-large)，保持官方折、256 tokens、原损失与 12 epoch；也与公开 V63 的一个骨干同类。 | **五折完成，No-go。** 单路 0.352315；固定 E24 融合 0.425000→0.431019，增量 +0.006019，4/5 折不降，最差类召回 −0.116667。修正版[资源门槛](e41_deberta_v3_large_resource_results.md)通过，但性能门槛未过，不全量训练或提交。[独立审计](e41_deberta_large_fivefold_results.md) |
 | **下一路大语言模型** | [Qwen3-14B-Base](https://huggingface.co/Qwen/Qwen3-14B-Base) 是 29.54 GB、Apache-2.0 的可获取异构骨干；Llama 8B 另需门控访问与独立许可。 | E39 资源和离线信号确认后优先评估 14B；3090 通过也必须另验 Kaggle T4×2 显存和耗时，不把模型数量当作收益证据。 |
-| **独立来源数据** | [Oleg 语料](p1_3_oleg_corpus_provenance_audit.md)及 [Open Pool v16 与四个上游来源](p1_4_pool_v16_source_audit.md)已复查，逐次请求/路由或独立筛选证据仍不足，新增严格准入 0 行。 | 继续寻求可核验的原始调用与独立提示；若取得证据，先锁来源版本、行级映射、许可和固定每类权重，用[单源 E0c 筛查](p1_2_external_source_refresh_2026-11-11.md)检验，再考虑 GPU。 |
+| **独立来源数据** | [Oleg 语料](p1_3_oleg_corpus_provenance_audit.md)、[Open Pool v16](p1_4_pool_v16_source_audit.md)和[11 月 12 日新来源](p1_5_external_source_refresh_2026-11-12.md)均复查，逐次请求/路由或独立筛选证据仍不足，新增严格准入 0 行。 | 继续寻求可核验的原始调用与独立提示；若取得证据，先锁来源版本、行级映射、许可和固定每类权重，用[单源 E0c 筛查](p1_2_external_source_refresh_2026-11-11.md)检验，再考虑 GPU。 |
 
 所有新 OOF 仍使用同一 120 prompt 五折，30 prompt 已用保留集不参与选模；不根据单折或 Kaggle 公榜反复调参。固定晋级门槛是相对当时强基线 BA 至少 **+0.01**、至少 **4/5 折不降**、任一类召回下降 **小于 0.05**，另报按 prompt 配对区间。只有完整离线与资源审计都通过，才拟合全量权重、准备 Kaggle 提交。权重、原始数据及逐行 OOF 不进入 Git。
