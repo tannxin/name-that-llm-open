@@ -83,6 +83,24 @@ segments. Kaggle's Dataset documentation says an uploaded ZIP is unpacked
 server-side. After a private upload, inspect the mounted Dataset to confirm
 the 54 flat files are present before running the unscored Notebook.
 
+For browsers that cannot transfer the 3.16 GB single archive reliably,
+`python kaggle/package_e39_gpu_wheelhouse_split.py package` creates two
+`ZIP_STORED` files below 1.9 GB each. The first contains 25 wheels plus the
+manifest and lock; the second contains the other 27 wheels. The split
+packager verifies every member against the same locked manifest, checks that
+the two archives have no duplicate names, and requires their union to be the
+same 54 flat files. `python kaggle/package_e39_gpu_wheelhouse_split.py verify`
+repeats the combined check without modifying either archive.
+
+| Archive | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `outputs/e39_gpu_wheelhouse_cp313_cu118_part1.zip` | 1,578,835,432 | `e80eba47be4bf216d6353f86843c939f64fdf5aeb6a1ccd2b01931de4e53b25b` |
+| `outputs/e39_gpu_wheelhouse_cp313_cu118_part2.zip` | 1,578,853,352 | `561edf2bdc0bddfc8696dc7e6bdf9f018b10444ac0bfaebee23db94e0fd76bfc` |
+
+Upload both parts to the **same private Dataset**. Before the Notebook runs,
+confirm Kaggle unpacked all 54 files into one directory beside the manifest;
+the Notebook fails closed if the wheels remain split across mount roots.
+
 Cross-platform pip resolution, Linux dependency markers, wheel tags and the
 finished manifest have passed an independent local static review. No Kaggle
 asset is created by these local commands; Kaggle runtime compatibility remains
