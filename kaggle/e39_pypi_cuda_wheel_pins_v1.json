@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "purpose": "E39 unscored cp313 Linux CUDA 11.8 dependency wheelhouse",
+  "trust_source": "https://pypi.org/pypi/{distribution}/{version}/json",
+  "transfer_source": "https://mirrors.aliyun.com/pypi",
+  "wheels": [
+    {"distribution": "nvidia-cuda-nvrtc-cu11", "version": "11.8.89", "file": "nvidia_cuda_nvrtc_cu11-11.8.89-py3-none-manylinux2014_x86_64.whl", "bytes": 23173745, "sha256": "a8d02f3cba345be56b1ffc3e74d8f61f02bb758dd31b0f20e12277a5a244f756"},
+    {"distribution": "nvidia-cuda-runtime-cu11", "version": "11.8.89", "file": "nvidia_cuda_runtime_cu11-11.8.89-py3-none-manylinux2014_x86_64.whl", "bytes": 875592, "sha256": "92d04069a987e1fbc9213f8376d265df0f7bb42617d44f5eda1f496acea7f2d1"},
+    {"distribution": "nvidia-cuda-cupti-cu11", "version": "11.8.87", "file": "nvidia_cuda_cupti_cu11-11.8.87-py3-none-manylinux2014_x86_64.whl", "bytes": 13093662, "sha256": "4191a17913a706b5098681280cd089cd7d8d3df209a6f5cb79384974a96d24f2"},
+    {"distribution": "nvidia-cudnn-cu11", "version": "9.1.0.70", "file": "nvidia_cudnn_cu11-9.1.0.70-py3-none-manylinux2014_x86_64.whl", "bytes": 663919573, "sha256": "e6135ac63fe9d5b0b89cfb35c3fc1c1349f2b995becadf2e9dc21bca89d9633d"},
+    {"distribution": "nvidia-cublas-cu11", "version": "11.11.3.6", "file": "nvidia_cublas_cu11-11.11.3.6-py3-none-manylinux2014_x86_64.whl", "bytes": 417870460, "sha256": "60252822adea5d0b10cd990a7dc7bedf7435f30ae40083c7a624a85a43225abc"},
+    {"distribution": "nvidia-cufft-cu11", "version": "10.9.0.58", "file": "nvidia_cufft_cu11-10.9.0.58-py3-none-manylinux2014_x86_64.whl", "bytes": 168405419, "sha256": "e21037259995243cc370dd63c430d77ae9280bedb68d5b5a18226bfc92e5d748"},
+    {"distribution": "nvidia-curand-cu11", "version": "10.3.0.86", "file": "nvidia_curand_cu11-10.3.0.86-py3-none-manylinux2014_x86_64.whl", "bytes": 58124497, "sha256": "cd4cffbf78bb06580206b4814d5dc696d1161c902aae37b2bba00056832379e6"},
+    {"distribution": "nvidia-cusolver-cu11", "version": "11.4.1.48", "file": "nvidia_cusolver_cu11-11.4.1.48-py3-none-manylinux2014_x86_64.whl", "bytes": 128246438, "sha256": "ea9fb1ad8c644ca9ed55af13cc39af3b7ba4c3eb5aef18471fe1fe77d94383cb"},
+    {"distribution": "nvidia-cusparse-cu11", "version": "11.7.5.86", "file": "nvidia_cusparse_cu11-11.7.5.86-py3-none-manylinux2014_x86_64.whl", "bytes": 204126227, "sha256": "8d7cf1628fd8d462b5d2ba6678fae34733a48ecb80495b9c68672ec6a6dde5ef"},
+    {"distribution": "nvidia-nccl-cu11", "version": "2.21.5", "file": "nvidia_nccl_cu11-2.21.5-py3-none-manylinux2014_x86_64.whl", "bytes": 147811630, "sha256": "49d8350629c7888701d1fd200934942671cb5c728f49acc5a0b3a768820bed29"},
+    {"distribution": "nvidia-nvtx-cu11", "version": "11.8.86", "file": "nvidia_nvtx_cu11-11.8.86-py3-none-manylinux2014_x86_64.whl", "bytes": 99130, "sha256": "979f5b2aef5da164c5c53c64c85c3dfa61b8b4704f4f963bb568bf98fa8472e8"},
+    {"distribution": "triton", "version": "3.2.0", "file": "triton-3.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", "bytes": 253154278, "sha256": "e5dfa23ba84541d7c0a531dfce76d8bcd19159d50a4a8b14ad01e91734a5c1b0"},
+    {"distribution": "bitsandbytes", "version": "0.45.5", "file": "bitsandbytes-0.45.5-py3-none-manylinux_2_24_x86_64.whl", "bytes": 76059261, "sha256": "a5453f30cc6aab6ccaac364e6bf51a7808d3da5f71763dffeb6d9694c59136e4"},
+    {"distribution": "peft", "version": "0.15.2", "file": "peft-0.15.2-py3-none-any.whl", "bytes": 411051, "sha256": "0dfc942b03b7af4b7267cd4e30b15e3a4a1d277adc581ce6245fc13f1f93d0a0"},
+    {"distribution": "accelerate", "version": "1.6.0", "file": "accelerate-1.6.0-py3-none-any.whl", "bytes": 354748, "sha256": "1aee717d3d3735ad6d09710a7c26990ee4652b79b4e93df46551551b5227c2aa"}
+  ]
+}
