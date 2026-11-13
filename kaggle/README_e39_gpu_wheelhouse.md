@@ -65,6 +65,24 @@ including a successful live official PyTorch index check. All large wheels
 remain in Git-ignored `outputs/`; only this spec, scripts, README and the
 unscored Notebook are suitable for Git review.
 
+## Private Dataset archive
+
+`python kaggle/package_e39_gpu_wheelhouse.py package` creates the Git-ignored
+`outputs/e39_gpu_wheelhouse_cp313_cu118.zip`. The packager pins the final
+manifest byte hash, re-verifies the wheelhouse, and includes exactly 54 flat
+members: its 52 wheels, `e39_gpu_wheel_manifest.json`, and
+`requirements-e39-gpu-locked.txt`. Every member is `ZIP_STORED` with fixed ZIP
+metadata and is checked against its expected size and SHA-256 before the
+archive is published. `python kaggle/package_e39_gpu_wheelhouse.py verify`
+performs the same checks again without changing the archive.
+
+The verified archive is 3,157,688,910 bytes with SHA-256
+`905bcd9be4a2d4d231fd3ff3eb631ada31856009f27c08467d7528208f559f91`.
+It contains no model, adapter, competition data, logs, cache or download
+segments. Kaggle's Dataset documentation says an uploaded ZIP is unpacked
+server-side. After a private upload, inspect the mounted Dataset to confirm
+the 54 flat files are present before running the unscored Notebook.
+
 Cross-platform pip resolution, Linux dependency markers, wheel tags and the
 finished manifest have passed an independent local static review. No Kaggle
 asset is created by these local commands; Kaggle runtime compatibility remains
