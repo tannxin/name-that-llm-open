@@ -15,5 +15,15 @@
   "authoritative_nodefs_telemetry_available": false,
   "local_growth_budget_bytes": 2147483648,
   "validation_accuracy_computed": false,
-  "hidden_test_labels_used": false
+  "hidden_test_labels_used": false,
+  "kaggle_public_submission": {
+    "date_utc": "2026-11-17",
+    "notebook_version_id": 370388242,
+    "status": "Succeeded",
+    "public_balanced_accuracy": 0.445,
+    "prior_best_public_balanced_accuracy": 0.434,
+    "public_score_difference": 0.011,
+    "private_balanced_accuracy": null,
+    "fusion_changed_after_public_feedback": false
+  }
 }

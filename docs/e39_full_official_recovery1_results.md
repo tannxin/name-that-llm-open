@@ -6,4 +6,6 @@
 
 首次全量启动在训练前因节点本地空间门槛中止，未产出 adapter。Recovery1 保持原训练配置、数据、种子和模型，只把存储守卫改为在 SSH 可见的真实节点空间上作保守判定，并限制 Pod 本地缓存增长为 2 GiB；模型、缓存和输出留在共享盘单份。训练期间节点本地 overlay 留有约 250 GiB 余量。服务账号无法读取 Kubernetes 权威的节点临时存储遥测，因此该项明确记录为不可用，不能把 `df` 当作权威驱逐阈值。
 
-Kaggle 的双 T4、断网、4,000 行无评分部署代理此前通过：总耗时约 2.47 小时，GPU 峰值预留约 7.30 GiB。官方全量 adapter 已封装为私有 Kaggle 数据集，并逐文件校验；正式 Notebook 固定 E24 + 1×E39，要求挂载官方比赛数据、锁定底座、adapter 和离线依赖，输出 `submission.parquet`。**公榜分数须以 Kaggle 正式提交后的页面为准。**
+Kaggle 的双 T4、断网、4,000 行无评分部署代理此前通过：总耗时约 2.47 小时，GPU 峰值预留约 7.30 GiB。官方全量 adapter 已封装为私有 Kaggle 数据集，并逐文件校验；正式 Notebook 固定 E24 + 1×E39，挂载官方比赛数据、锁定底座、adapter 和离线依赖，输出 `submission.parquet`。公榜分数以 Kaggle 正式提交页面为准。
+
+2026-11-17 UTC，[正式 Notebook Version 2](https://www.kaggle.com/code/tanxin357/submit-e24-plus-e39-full-recovery1?scriptVersionId=370388242) 与比赛隐藏测试重跑完成，Kaggle 提交页显示 **Success / Succeeded，公榜 balanced accuracy 0.445**。此前最佳 E24 公榜为 0.434，因此公榜增量为 **+0.011**。这是公开测试子集上的分数，与上文 120 prompt 的离线五折 OOF 0.443056 属于不同评估；私榜分数未知，也不据公榜更改固定融合。提交记录见[比赛提交页](https://www.kaggle.com/competitions/name-that-llm/submissions)。
