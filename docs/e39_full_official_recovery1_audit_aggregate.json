@@ -1,0 +1,19 @@
+{
+  "stage": "E39_FULL_OFFICIAL_RECOVERY1_INDEPENDENT_ARTIFACT_AUDIT",
+  "status": "PASS",
+  "rows": 2699,
+  "prompts": 150,
+  "classes": 18,
+  "planned_optimizer_updates": 1014,
+  "completed_optimizer_updates": 1009,
+  "skipped_optimizer_updates": 5,
+  "train_seconds": 5425.325310068001,
+  "train_peak_reserved_bytes": 8594128896,
+  "adapter_total_bytes": 190839117,
+  "adapter_weights_sha256": "10d8e8eab740e5d259bd0dce3d61e503ed8d999f08c4732f5b0e5abbebed0a49",
+  "manifest_sha256": "7449bf1e7848d37097982c4e992fab0200eda3382e05ab539ff92be48b4a2505",
+  "authoritative_nodefs_telemetry_available": false,
+  "local_growth_budget_bytes": 2147483648,
+  "validation_accuracy_computed": false,
+  "hidden_test_labels_used": false
+}
