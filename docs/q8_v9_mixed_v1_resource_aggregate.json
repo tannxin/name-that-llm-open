@@ -1,0 +1,28 @@
+{
+  "audit": "independent_local_resource_recalculation",
+  "verdict": "RESOURCE_GO_ONLY",
+  "experiment": "q8_v9_mixed_v1",
+  "fold": 1,
+  "resource_report_sha256": "420ff59a9cad11704f872edef20a39094ccb9d745232e9f8ada85d8d99955761",
+  "protocol_lock_sha256": "59cc0da4815c7b8b04365683ec5f32102434946eb8a94268447872cb61fa868b",
+  "control_complete_sha256": "0ab41e0d7bcea796e4c055bf30ff2d973150f2cc157fc2714abec23cf4a5d0aa",
+  "training_rows": 5348,
+  "inference_rows_unlabeled": 4000,
+  "optimizer_updates_completed": 663,
+  "optimizer_updates_planned": 669,
+  "training_seconds_one_epoch": 3550.024377459995,
+  "projected_three_epochs_hours": 2.958353647883329,
+  "train_peak_reserved_bytes": 8592031744,
+  "inference_seconds": 621.2861591919936,
+  "inference_peak_reserved_bytes": 15885926400,
+  "validation_rows": 0,
+  "validation_scores_computed": false,
+  "holdout_evaluated": false,
+  "resource_gates_recomputed_pass": true,
+  "limitations": [
+    "No independent rehash of remote 16 GB Base weights or external source bytes in this audit; report and lock hashes matched previous CPU preflight.",
+    "Node eviction threshold and authoritative Pod ephemeral usage unavailable due Kubernetes service-account 403; no periodic watchdog telemetry artifact exists, and sampled overlay/GPU checks do not prove node eviction margin.",
+    "External source design used global official length statistics; subsequent OOF comparison is exploratory.",
+    "Resource PASS does not authorize performance fivefold, full-data training, or Kaggle submission without separate review."
+  ]
+}
