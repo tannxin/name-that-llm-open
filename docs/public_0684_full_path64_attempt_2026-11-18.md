@@ -13,3 +13,15 @@ Private Version 2 omitted the entire Open Pool attachment. Comparing the two inp
 Kaggle CPU catalogue version `370983986` ran with internet disabled and finished in **152.4 seconds**. It reported `INPUTS_PRESENT` for **34 of 34** expected sources, with zero errors in the mount and startup-input checks. The corrected 64-text diagnostic removes stale attachment metadata so it can inherit these inputs. All 31 notebook cells match the failed diagnostic exactly.
 
 The next execution step is to run the corrected diagnostic on two T4s and verify each active classifier from its logs and outputs. A second GPU run and a byte-for-byte match to the author’s historical assets remain unverified.
+
+## Local replay of the three fitted CPU classifiers
+
+The original `core_votes` function ran on the same 64 unlabeled texts in an offline WSL2 process. With version 22 of the prefit archive, the call took **7.09 seconds**. Each classifier produced 64 finite 18-class vectors. The three label orders matched and every top choice was unique.
+
+| Classifiers | Same first choice | Different first choice |
+| --- | ---: | ---: |
+| `svc4` and `tfidf` | 31 | 33 |
+| `svc4` and `distort` | 22 | 42 |
+| `tfidf` and `distort` | 17 | 47 |
+
+All three chose the same class for 11 texts. Exactly two agreed for 37 texts, and all three chose different classes for 16 texts. These counts establish that the classifiers make different decisions on this sample. Measuring their contributions to accuracy requires labeled examples held out from each classifier's training. The local timing covers only these three classifiers. The neural branches still await a full run.
