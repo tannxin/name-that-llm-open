@@ -40,3 +40,13 @@ The corrected private version (371005916) ran for **2,028.2 seconds**. It read t
 The original checkpoint finder sorted every matching configuration path and selected the first one with the requested model type and hidden size. A LoRA attachment supplied a matching configuration directory without base weights. The official Qwen3-8B-Base input was mounted, but this decoder resolved to the configuration-only directory. The worker exited with code 1 before the remaining ensemble and final inference could run. The 64-row run produced no final predictions or leaderboard score.
 
 The targeted repair is to bind the failing decoder to the specific 8B Base mount and verify its configuration, shard index, and every referenced shard before the expensive fit starts. Other adapters require independent evidence of the base they use. The logged voting weights describe execution only. Measuring contribution to accuracy requires labeled, held-out predictions.
+
+## Replay with the verified Qwen3-8B-Base checkpoint
+
+A separate offline Kaggle CPU run read all 16,381,516,776 bytes from the five official 8B Base weight shards. All five SHA-256 digests, the configuration and the shard index matched. The CPU run took 323 seconds.
+
+The next private dual-T4 run (371045492) used the same 64 unlabeled texts and 34 inputs. The log recorded the intended 8B checkpoint path. Qwen3-8B feature extraction finished in 338 training batches and 8 diagnostic batches. Its plain classification head had zero weight in the author's configuration. The log recorded a Gaussian fit. StyleGram and stylometry LightGBM each added a vote for all 64 rows.
+
+The component stack then requested a Qwen2 checkpoint with hidden size 3,584 for the Qwen2.5-7B branch. Its finder found no matching configuration under the attached inputs and the worker exited with code 1. Kaggle ended the run after 2,540.4 seconds. Final inference never started. The original author's public score remains separate from these unlabeled checks.
+
+The next CPU check must inspect checkpoint discovery across all requested backbones together, including the adapter-to-base relationship and the weight files named in each index. Adding a replacement model requires evidence of its variant and revision.
