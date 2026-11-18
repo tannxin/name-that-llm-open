@@ -12,7 +12,7 @@ Private Version 2 omitted the entire Open Pool attachment. Comparing the two inp
 
 Kaggle CPU catalogue version `370983986` ran with internet disabled and finished in **152.4 seconds**. It reported `INPUTS_PRESENT` for **34 of 34** expected sources, with zero errors in the mount and startup-input checks. The corrected 64-text diagnostic removes stale attachment metadata so it can inherit these inputs. All 31 notebook cells match the failed diagnostic exactly.
 
-The next execution step is to run the corrected diagnostic on two T4s and verify each active classifier from its logs and outputs. A second GPU run and a byte-for-byte match to the author’s historical assets remain unverified.
+The table below records how far the corrected GPU run progressed.
 
 ## Local replay of the three fitted CPU classifiers
 
@@ -24,4 +24,19 @@ The original `core_votes` function ran on the same 64 unlabeled texts in an offl
 | `svc4` and `distort` | 22 | 42 |
 | `tfidf` and `distort` | 17 | 47 |
 
-All three chose the same class for 11 texts. Exactly two agreed for 37 texts, and all three chose different classes for 16 texts. These counts establish that the classifiers make different decisions on this sample. Measuring their contributions to accuracy requires labeled examples held out from each classifier's training. The local timing covers only these three classifiers. The neural branches still await a full run.
+All three chose the same class for 11 texts. Exactly two agreed for 37 texts, and all three chose different classes for 16 texts. These counts establish that the classifiers make different decisions on this sample. Measuring their contributions to accuracy requires labeled examples held out from each classifier's training. The local timing covers only these three classifiers. A later dual-T4 run tested the neural path and reached the Qwen3-8B decoder.
+
+## Result of the corrected dual-T4 run
+
+The corrected private version (371005916) ran for **2,028.2 seconds**. It read the restored Open Pool and reached `comp_stack.py` with 64 unlabeled inputs. Two contributions to the partial ensemble are confirmed by the accumulator log.
+
+| Component | Evidence on this run |
+| --- | --- |
+| StyleGram | Added a vote on all 64 rows at weight 1.516. |
+| Stylometry LightGBM | Added a vote on all 64 rows at weight 0.063. |
+| GLM-9B | Computed features and grouped the 64 texts as singletons. The plain head had zero weight. The log showed a Gaussian fit but no vote from that head. |
+| Qwen3-8B decoder | Failed when loading the checkpoint, before this branch could score the texts. |
+
+The original checkpoint finder sorted every matching configuration path and selected the first one with the requested model type and hidden size. A LoRA attachment supplied a matching configuration directory without base weights. The official Qwen3-8B-Base input was mounted, but this decoder resolved to the configuration-only directory. The worker exited with code 1 before the remaining ensemble and final inference could run. The 64-row run produced no final predictions or leaderboard score.
+
+The targeted repair is to bind the failing decoder to the specific 8B Base mount and verify its configuration, shard index, and every referenced shard before the expensive fit starts. Other adapters require independent evidence of the base they use. The logged voting weights describe execution only. Measuring contribution to accuracy requires labeled, held-out predictions.
