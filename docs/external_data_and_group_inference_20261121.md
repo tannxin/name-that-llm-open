@@ -32,6 +32,12 @@ The 4,000-row timing fixture repeats 1,840 of the 2,160 unique development respo
 
 The first T4 probe also padded each batch of four to its longest text. Relative to the archived two-text batches, 1,076 of 2,160 texts received additional left padding. Effective token IDs agreed for all 2,160. A second private probe uses the original two-text batches and the same acceptance thresholds.
 
+The full pipeline completed a private, offline rehearsal on two T4s in 11,344.36 seconds (3 h 9 min). The lowest sampled free space on the working disk was 13.24 GiB. Preparation, E24 scoring, E42 scoring, 4B encoding in batches of four, group matching and independent readback all completed. The readback verified 18 finite scores per row from each scoring branch and reproduced all 4,000 Parquet predictions in the expected ID order. The 14B model peaked at 7.07 and 6.26 GiB of reserved GPU memory on the two cards. The 4B encoder peaked at 8.25 GiB on one card. [Kaggle resource run, version 372165904](https://www.kaggle.com/code/tanxin357/ntl-e42-soft-groups-4000-resource?scriptVersionId=372165904)
+
+The model inferred 213 groups. Soft matching applied to 529 rows, while 3,471 rows used the original single-response predictions. No top prediction changed on this repeated, unlabeled fixture. The batch-four encoder passed six of eight cross-device checks. Its two outstanding discrepancies still prevent a competition submission using that configuration. The batch-two check remained pending at this checkpoint.
+
+The separate official three-row preview returned a 1,761-byte Parquet file, retrieved directly from the saved version. [Kaggle sample preview, version 372153035](https://www.kaggle.com/code/tanxin357/ntl-e42-automatic-soft-grouping?scriptVersionId=372153035)
+
 ## External data for the four-view SVM
 
 Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After checking model versions, source prompts and duplicates, 7,008 responses were eligible. Of those, 4,260 had raw request/response evidence and 2,748 were linked to a direct Google Vertex call through the generator's recorded `modelVersion`. The fixed sample contained 1,632 responses over 547 questions and 17 classes, with 96 distinct questions per represented class. Earlier E24/v9 training had used 1,120 of these responses, leaving 512 previously unused.
@@ -57,3 +63,5 @@ At 15:45 UTC on November 21, fold 2 completed external training followed by offi
 At 17:22 UTC on 21 November, the storage guard stopped mixed training on fold 2 after local disk use grew past its 2 GiB limit. The largest observed increase around the stop was in another workload’s local directory. The available measurements do not attribute every byte of the increase. The queued continuation ended before it started a fit.
 
 Across the ten planned fits, one completed, two stopped during training without a resumable checkpoint, and seven had not entered training. The completed fit was fold 2 in the external-then-official schedule. A comparison of the two training schedules still requires complete predictions from both across all five folds.
+
+At 18:18 UTC on 21 November, the controller for the seven previously untrained fits launched after a continuous ten-minute GPU and disk check. At dispatch, one of the ten fits had completed. The two previously interrupted mixed-training fits were outside this queue.
