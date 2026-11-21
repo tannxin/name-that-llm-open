@@ -35,3 +35,7 @@ Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After 
 Each fusion adds 0.25 times the row-standardized SVM scores to the baseline. The matched fusion comparison corrected 22 cases and lost 21. Restricting the external source evidence to raw HTTP records also gained one correct prediction in fusion. Neither data comparison passed the advancement rule. These measurements apply to the SVM training recipe. The comparison of Qwen training schedules is separate.
 
 The catalogs used information from the full official corpus during curation, and upstream generation used official length statistics. The 150 official questions were screened using reconstructed question text, which can miss substantial paraphrases. Official answer hashes were also screened for exact duplicates without using labels. The external-data effect is therefore exploratory. The E24 baseline itself includes an external source informed by official length statistics.
+
+## Qwen training status
+
+The first two Qwen3-14B-Base runs tested mixed training on fold 1 and external training followed by official fine-tuning on fold 2. Both last recorded 900 of 1,260 planned optimizer steps. Each GPU guard detected an additional compute process and stopped its own run. Across the two five-fold schedules, 0 of 10 runs completed. The two interrupted fits would have to start from scratch because they saved no resumable checkpoint. Validation scores for both training schedules remain unknown.
