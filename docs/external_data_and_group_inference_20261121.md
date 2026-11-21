@@ -22,6 +22,12 @@ Against E24 + E42 alone, automatic soft matching gained 67 correct predictions. 
 
 Using known groups recovered 16 more correct predictions than automatic soft matching, a BA difference of +0.007407. Automatic groups of eligible size covered 2,082 of 2,160 responses. Development questions contain exactly one response per class. The usefulness of this constraint on hidden data depends on its group composition.
 
+### Cross-device deployment check
+
+A private offline T4 run encoded 4,000 unlabeled inputs in 578.68 seconds. On the 2,160 development responses, the minimum cosine similarity to the archived 3090 embeddings was 0.998672, below the required 0.999. Pairwise agreement of the inferred groups had F1 values of 0.987747, 1.000000, 1.000000, 0.994287 and 0.999515 across the five folds. Fold 1 fell below the per-fold requirement of 0.99. It shared 3,305 pairs with the reference, added 51 and lost 31.
+
+With the frozen E24 + E42 scores, all 2,160 soft-matched class predictions agreed across devices. Six responses changed eligibility for group matching. The portability check failed two of its eight requirements. The 3090 reference used BF16 model inference with a batch size of two, while the T4 version used FP16 inference with a batch size of four. These differences were present together, so this comparison cannot isolate their effects.
+
 ## External data for the four-view SVM
 
 Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After checking model versions, source prompts and duplicates, 7,008 responses were eligible. Of those, 4,260 had raw request/response evidence and 2,748 were linked to a direct Google Vertex call through the generator's recorded `modelVersion`. The fixed sample contained 1,632 responses over 547 questions and 17 classes, with 96 distinct questions per represented class. Earlier E24/v9 training had used 1,120 of these responses, leaving 512 previously unused.
