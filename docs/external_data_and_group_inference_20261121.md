@@ -39,3 +39,5 @@ The catalogs used information from the full official corpus during curation, and
 ## Qwen training status
 
 The first two Qwen3-14B-Base runs tested mixed training on fold 1 and external training followed by official fine-tuning on fold 2. Both last recorded 900 of 1,260 planned optimizer steps. Each GPU guard detected an additional compute process and stopped its own run. Across the two five-fold schedules, 0 of 10 runs completed. The two interrupted fits would have to start from scratch because they saved no resumable checkpoint. Validation scores for both training schedules remain unknown.
+
+On the authorized restart, fold 1 mixed training began after 601.8 seconds of continuous GPU availability. An additional Python process appeared about ten minutes into training, and the guard stopped the fit. The run produced no checkpoint. At 14:49 UTC on 21 November, fold 2 in the external-then-official schedule had reached 840 of 1,260 steps and was still running. No fold score was used to change either schedule.
