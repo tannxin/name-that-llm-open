@@ -106,3 +106,9 @@ At 09:30 UTC the fold-3 mixed fit resumed on the same RTX 4090 D. Optimizer grou
 At 11:30 UTC the fold-3 mixed run stopped after training and validation. It processed all 10,080 example presentations and all 1,260 optimizer groups, with 1,255 successful updates and five skipped updates. The final checkpoint recorded 7,580.29 seconds of training and 13.742 GiB peak reserved GPU memory. An independent CPU comparison matched all 561 trainable tensors in the saved adapter to the final checkpoint, covering 64,317,440 float32 values.
 
 The worker computed a finite 18-class score vector for each of the 432 validation answers, then checked the original limit of strictly less than 22 GiB for each phase. The recorded training peak and the failed check establish that validation reached at least 22 GiB. Its exact PyTorch peak was not persisted. The process exited before writing fold predictions. Monitored Pod-local storage grew by at most 160 KiB and the sampled OOM-kill count stayed at zero. One of the ten comparisons has a complete fold output. The other five fits in the dedicated queue had not started at the time of the stop.
+
+## Fold 3 mixed validation in a separate process
+
+On 22 November, a fresh process on the RTX 4090 D loaded the saved fold-3 mixed-training adapter and produced predictions for all 432 held-out answers in their original order. Training peaked at 13.74 GiB of reserved GPU memory. Validation peaked at 13.31 GiB, and inference took 75.54 seconds. Monitored Pod-local storage grew by at most 80 KiB during this validation run.
+
+The blind audit accepted this output, bringing the total to two of ten across the paired five-fold schedules. The archive retains the earlier failure records. Fold scores stay sealed until all ten outputs pass the audit.
