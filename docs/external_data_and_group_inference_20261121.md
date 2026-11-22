@@ -81,6 +81,18 @@ Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After 
 
 Each fusion adds 0.25 times the row-standardized SVM scores to the baseline. The matched fusion comparison corrected 22 cases and lost 21. Restricting the external source evidence to raw HTTP records also gained one correct prediction in fusion. Neither data comparison passed the advancement rule. These measurements apply to the SVM training recipe. The comparison of Qwen training schedules is separate.
 
+### How the SVM changes carried through to the ensemble
+
+On the 2,160 development responses, adding external data changed the standalone SVM’s top prediction on 869 responses. Replacing the official-only SVM with the expanded SVM in the fixed ensemble changed 86 predictions. The table pairs the two comparisons response by response. Correctness stays the same when both predictions are correct or when both are wrong.
+
+| Standalone SVM after adding external data | Ensemble corrected | Ensemble newly wrong | Ensemble correctness stayed the same |
+|---|---:|---:|---:|
+| Corrected | 7 | 1 | 202 |
+| Newly wrong | 0 | 3 | 190 |
+| Correctness stayed the same | 15 | 17 | 1,725 |
+
+Of the 210 responses the expanded SVM corrected on its own, both ensembles already got 91 right and both missed 111. Across the 869 responses where the SVM’s top prediction changed, the ensemble gained nine and lost nine. Across the other 1,291 responses, the SVM kept its top prediction, but its 18 class scores could still change. The ensemble changed 39 predictions there, correcting 13, losing 12 and switching between two wrong classes on 14. This accounts for the ensemble’s net gain of one on the fixed folds. Relative to E24 + E42 alone, adding the official-only SVM changed 108 predictions. Adding the expanded SVM changed 100.
+
 The catalogs used information from the full official corpus during curation, and upstream generation used official length statistics. The 150 official questions were screened using reconstructed question text, which can miss substantial paraphrases. Official answer hashes were also screened for exact duplicates without using labels. The external-data effect is therefore exploratory. The E24 baseline itself includes an external source informed by official length statistics.
 
 ## Qwen training status
