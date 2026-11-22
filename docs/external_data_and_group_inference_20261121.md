@@ -155,3 +155,19 @@ The training and validation processes both exited successfully on 22 November. O
 Two independently hashed checkpoints before and after the switch matched the prescribed data order. At group 600, the cursor covered 4,800 external presentations. At group 660, it covered all 4,896 external presentations and the first 384 official presentations. The optimizer and learning-rate schedule continued across that boundary.
 
 Three of the ten planned fits have now produced fold predictions. The host checked the new fold’s shared copies, its chain of 21 checkpoint receipts and the prediction file hash. Confirmation against the dedicated Pod’s private originals is pending, so two fits have completed independent acceptance. The fold predictions remain sealed.
+
+### Training exposure and learning rate by data source
+
+Both expanded schedules prescribe three presentations of each of the same 1,728 official and 1,632 external training answers per fold. The official-only runs used the same official answers three times. The five-fold expanded totals come from the locked inputs and the 256-token truncation rule. Both completed fold-3 training records match the calculated 1,451,586 tokens for that fold.
+
+| Training budget | Official only | Mixed or external-first |
+|---|---:|---:|
+| Official presentations per fold | 5,184 | 5,184 |
+| External presentations per fold | 0 | 4,896 |
+| Planned optimizer updates per fold | 648 | 1,260 |
+| Linear warmup steps per fold | 20 | 38 |
+| Training tokens across five folds, per schedule | 3,730,596 | 7,230,576 |
+
+The external rows add 699,996 tokens per fold. Comparing either expanded arm with official-only training therefore measures the joint effect of new data and a 93.82% larger token budget. Comparing the two expanded arms holds that budget and both within-source example orders fixed.
+
+The staged schedule carries AdamW and its learning-rate scheduler across the switch to official data. In fold 3, the first official group was group 613, with a learning rate of 0.000106874. Across the 5,184 official presentations, the average group learning rate was 0.000053928 for staged training and between 0.000099607 and 0.000100618 for mixed training. Each skipped group contributes zero to this average. The bounds cover all placements of the five mixed-training skips compatible with the observed count at group 120. Thus official examples in the staged arm received about 54% of the average learning rate they saw in mixed training. This characterizes how the order interacts with the decay schedule. Accuracy is assessed separately on the paired five-fold predictions.
