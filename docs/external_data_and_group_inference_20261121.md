@@ -67,6 +67,8 @@ The host scorer recorded the first process’s groups and choices before reading
 
 For the earlier batch-two cross-device run (version 372271781), the single changed class prediction occurred in fold 2. With 1,025 archived soft-matched decisions correct, changing one decision bounds the result for that run at **1,024–1,026 correct out of 2,160**, or 66–68 above baseline. That run reported agreement counts and did not return the individual T4 predictions for scoring.
 
+A CPU reconstruction of the original RTX 3090 batches and Kaggle T4 slot A recovered identical unpadded token sequences and the same last valid token for all 2,160 responses. In the archived normalized embeddings, 26,606 of 5,529,600 coordinates had opposite nonzero signs, with at least one in every response. Positive L2 scaling and the final storage cast preserve the sign of nonzero values, so the differences already existed before normalization. These archives cannot isolate the effects of forward precision, batch layout and device kernels.
+
 ## External data for the four-view SVM
 
 Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After checking model versions, source prompts and duplicates, 7,008 responses were eligible. Of those, 4,260 had raw request/response evidence and 2,748 were linked to a direct Google Vertex call through the generator's recorded `modelVersion`. The fixed sample contained 1,632 responses over 547 questions and 17 classes, with 96 distinct questions per represented class. Earlier E24/v9 training had used 1,120 of these responses, leaving 512 previously unused.
@@ -120,3 +122,11 @@ The worker computed a finite 18-class score vector for each of the 432 validatio
 On 22 November, a fresh process on the RTX 4090 D loaded the saved fold-3 mixed-training adapter and produced predictions for all 432 held-out answers in their original order. Training peaked at 13.74 GiB of reserved GPU memory. Validation peaked at 13.31 GiB, and inference took 75.54 seconds. Monitored Pod-local storage grew by at most 80 KiB during this validation run.
 
 The blind audit accepted this output, bringing the total to two of ten across the paired five-fold schedules. The archive retains the earlier failure records. Fold scores stay sealed until all ten outputs pass the audit.
+
+## Fold 3 external training followed by official fine-tuning
+
+The training and validation processes both exited successfully on 22 November. On the dedicated 48 GiB RTX 4090 D, training took 7,672.77 seconds and peaked at 13.74 GiB of reserved GPU memory. Fresh-process validation took 76.82 seconds, peaked at 13.31 GiB, and produced predictions for all 432 held-out answers. The 1,260 scheduled optimizer groups yielded 1,255 successful updates and five skips. Monitored Pod-local storage grew by at most 216 KiB.
+
+Two independently hashed checkpoints before and after the switch matched the prescribed data order. At group 600, the cursor covered 4,800 external presentations. At group 660, it covered all 4,896 external presentations and the first 384 official presentations. The optimizer and learning-rate schedule continued across that boundary.
+
+Three of the ten planned fits have now produced fold predictions. The host checked the new fold’s shared copies, its chain of 21 checkpoint receipts and the prediction file hash. Confirmation against the dedicated Pod’s private originals is pending, so two fits have completed independent acceptance. The fold predictions remain sealed.
