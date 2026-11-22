@@ -41,6 +41,17 @@ Most of the gain came from inferred groups in which multiple answers had the sam
 
 Only two inferred groups combined answers to different questions. They contained 37 answers in total. Four went through soft matching, and all four kept their top prediction. Two independent CPU calculations agreed on these counts. This post hoc analysis describes the frozen out-of-fold predictions on 2,160 development answers. The effect of grouping errors on hidden data remains unknown.
 
+### Does soft matching benefit from question membership?
+
+We shuffled group membership 64 times within each fold, keeping every group size, each answer’s eligibility and all E24 + E42 scores fixed. The automatic groups yielded about 56 more correct answers than the average random grouping. Known question groups yielded about 69 more.
+
+| Grouping | Net correct vs baseline | Mean net correct after shuffling (observed range) | BA gain over shuffled mean (paired 95% interval) |
+|---|---:|---:|---:|
+| Automatic | +67 | +10.97 (−5 to +29) | +0.02594 [+0.01696, +0.03519] |
+| Known question identity | +83 | +14.44 (−8 to +33) | +0.03174 [+0.02202, +0.04159] |
+
+The intervals use 20,000 paired resamples of the 120 development questions, conditional on the 64 shuffles. An independent solver reproduced all 140,400 top predictions for each grouping method. This exploratory control supports using question membership on this development set. Deployment still requires the separate cross-device checks below.
+
 ### Cross-device deployment check
 
 A private offline T4 run encoded 4,000 unlabeled inputs in 578.68 seconds. On the 2,160 development responses, the minimum cosine similarity to the archived 3090 embeddings was 0.998672, below the required 0.999. Pairwise agreement of the inferred groups had F1 values of 0.987747, 1.000000, 1.000000, 0.994287 and 0.999515 across the five folds. Fold 1 fell below the per-fold requirement of 0.99. It shared 3,305 pairs with the reference, added 51 and lost 31.
