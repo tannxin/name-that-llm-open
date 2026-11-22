@@ -73,6 +73,8 @@ A CPU reconstruction of the original RTX 3090 batches and Kaggle T4 slot A recov
 
 Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After checking model versions, source prompts and duplicates, 7,008 responses were eligible. Of those, 4,260 had raw request/response evidence and 2,748 were linked to a direct Google Vertex call through the generator's recorded `modelVersion`. The fixed sample contained 1,632 responses over 547 questions and 17 classes, with 96 distinct questions per represented class. Earlier E24/v9 training had used 1,120 of these responses, leaving 512 previously unused.
 
+Before the 96-question cap, 1,100 of 1,129 eligible questions had multiple answers. These counts cover responses that passed source verification and deduplication. Each question had at most one answer per model class, and none covered all 18 classes. Enforcing one answer per question and class removed zero responses. The cap removed 5,376 responses, leaving 312 questions with multiple answers in the final training sample. This pattern describes how the two external sources sampled answers. Whether a model can appear twice in a hidden-test question group remains unknown.
+
 | Comparison | Reference BA | Expanded SVM BA | Net correct | Paired 95% interval for BA change |
 |---|---:|---:|---:|---:|
 | Standalone four-view SVM, official-only vs expanded training | 0.358333 | 0.366204 | +17 | [−0.010648, +0.026389] |
