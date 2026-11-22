@@ -24,7 +24,7 @@ Using known groups recovered 16 more correct predictions than automatic soft mat
 
 ### Soft matching versus pairwise differences
 
-On the same automatic groups, soft matching got 39 more responses right than pairwise differences. It corrected 83 of the pairwise model’s errors and lost 44 of its correct answers. Using known question groups increased the net difference to 49. Both comparisons use the frozen predictions on the same 120 development questions.
+On the same automatic groups, soft matching got 39 more responses right than pairwise differences. It corrected 83 of the pairwise model’s errors and lost 44 of its correct answers. Using known question groups increased the net difference to 49. With automatic groups, soft matching got more answers right on 48 of the 120 development questions, tied on 49 and got fewer right on 23. The comparison uses frozen predictions from the same development set. Whether combining the two methods would improve accuracy remains untested.
 
 | Group information | Correct with pairwise differences | Correct with soft matching | BA difference (soft minus pairwise) | Paired 95% interval | Net correct by fold |
 |---|---:|---:|---:|---|---|
@@ -52,6 +52,8 @@ The model inferred 213 groups. Soft matching applied to 529 rows, while 3,471 ro
 The separate official three-row preview returned a 1,761-byte Parquet file, retrieved directly from the saved version. [Kaggle sample preview, version 372153035](https://www.kaggle.com/code/tanxin357/ntl-e42-automatic-soft-grouping?scriptVersionId=372153035)
 
 In the batch-two run, the T4 encoded all 4,000 rows in 442.83 seconds including model loading. On the 2,160 unique development responses, the minimum cosine to the 3090 reference was **0.998656**, below 0.999. Group pair F1 across the five folds was 0.987747, 0.993452, 1.000000, 0.994287 and 0.999515. Fold 1 again fell below 0.99. The two devices agreed on 2,159 of 2,160 soft-matched predictions, and seven responses changed eligibility for matching. Batch two passed the same six of eight checks as batch four. Matching batch partners and padding did not resolve the cross-device discrepancy. The two devices also used different inference precision, leaving the cause unresolved. [Kaggle batch-two output, version 372271781](https://www.kaggle.com/code/tanxin357/ntl-q4b-group-portability-v1/output?scriptVersionId=372271781)
+
+On the frozen clustering pipeline, the T4 and RTX 3090 disagreed on whether 166 pairs of responses belonged to the same group. For only three of those pairs did the direct distance cross the 0.60 threshold between devices. Replaying the RTX 3090 merge order with T4 distances reproduced the 3090 assignment for all 166 pairs. This isolates the effect of merge order in the replay. The experiment leaves the underlying hardware or numerical cause unresolved, and the T4 configuration still passes six of eight cross-device checks.
 
 Two fresh processes on the same Kaggle T4 each encoded the 2,160 development responses in batches of four, with each fold packed separately. Both produced byte-identical arrays of 2,160 × 2,560 values, identical inferred links in all five folds and identical soft-matched choices for all responses. The private offline run took 898.9 seconds. Independent verification used the two original arrays, their manifests and the aggregate report. [Kaggle same-device output, version 372342874](https://www.kaggle.com/code/tanxin357/ntl-q4b-group-portability-v1/output?scriptVersionId=372342874)
 
