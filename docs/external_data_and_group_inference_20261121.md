@@ -80,6 +80,14 @@ For the earlier batch-two cross-device run (version 372271781), the single chang
 
 A CPU reconstruction of the original RTX 3090 batches and Kaggle T4 slot A recovered identical unpadded token sequences and the same last valid token for all 2,160 responses. In the archived normalized embeddings, 26,606 of 5,529,600 coordinates had opposite nonzero signs, with at least one in every response. Positive L2 scaling and the final storage cast preserve the sign of nonzero values, so the differences already existed before normalization. These archives cannot isolate the effects of forward precision, batch layout and device kernels.
 
+### BF16 operator diagnostic on the T4
+
+A separate private run kept the 4B weights and inter-layer activations in BF16. It evaluated the linear projections and math attention in FP32 and rounded their outputs back to BF16. The T4 encoded all 4,000 fixture rows in 2,612.01 seconds, including model loading. The preceding FP16 run with the same two-row batches took 442.83 seconds. Both used the same frozen 3090 references, inputs and numerical thresholds.
+
+Six of eight checks passed. Minimum embedding cosine was 0.998385 (required 0.999), and fold 1 group-pair F1 was 0.983046 (required 0.99). Across the 3,388 inferred fold 1 pairs, 3,305 matched the 3,336 reference pairs. The other four folds met the F1 threshold. The final soft-matched class agreed on 2,159 of 2,160 development rows. The changed decision was in fold 2. Retaining BF16 at operator boundaries did not restore cross-device agreement under these conditions. This diagnostic measured agreement with an archived run and did not measure hidden-test accuracy.
+
+The platform produced a 6,560-byte report (SHA-256 `7844dc96053ba55db4d12bac058406f54e10d92851639c0360d37a48d638a0ba`). The host independently recomputed all eight checks and reproduced the report bytes from the second copy printed in the version log.
+
 ## External data for the four-view SVM
 
 Open Pool v17 and NLM Matched Clean v3 contained 226,191 and 24,443 rows. After checking model versions, source prompts and duplicates, 7,008 responses were eligible. Of those, 4,260 had raw request/response evidence and 2,748 were linked to a direct Google Vertex call through the generator's recorded `modelVersion`. The fixed sample contained 1,632 responses over 547 questions and 17 classes, with 96 distinct questions per represented class. Earlier E24/v9 training had used 1,120 of these responses, leaving 512 previously unused.
