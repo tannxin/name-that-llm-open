@@ -180,6 +180,20 @@ Both expanded schedules prescribe three presentations of each of the same 1,728 
 | Linear warmup steps per fold | 20 | 38 |
 | Training tokens across five folds, per schedule | 3,730,596 | 7,230,576 |
 
-The external rows add 699,996 tokens per fold. Comparing either expanded arm with official-only training therefore measures the joint effect of new data and a 93.82% larger token budget. Comparing the two expanded arms holds that budget and both within-source example orders fixed.
+The external rows add 699,996 tokens per fold. Comparing either expanded arm with official-only training therefore measures the joint effect of new data and a 93.82% larger total token budget across five folds. Comparing the two expanded arms holds that budget and both within-source example orders fixed.
 
 The staged schedule carries AdamW and its learning-rate scheduler across the switch to official data. In fold 3, the first official group was group 613, with a learning rate of 0.000106874. Across the 5,184 official presentations, the average group learning rate was 0.000053928 for staged training and between 0.000099607 and 0.000100618 for mixed training. Each skipped group contributes zero to this average. The bounds cover all placements of the five mixed-training skips compatible with the observed count at group 120. Thus official examples in the staged arm received about 54% of the average learning rate they saw in mixed training. This characterizes how the order interacts with the decay schedule. Accuracy is assessed separately on the paired five-fold predictions.
+
+### Fold 4 paired training and validation
+
+Both training orders finished on the same RTX 4090 D. Each processed 1,440,117 tokens, with 1,255 successful optimizer updates and five skipped updates. Both validation runs produced the 432 held-out IDs in the order independently reconstructed from the official split. At group 600 the mixed run had seen 2,480 official and 2,320 external presentations. The staged run had seen 4,800 external presentations at that point. Both finished with 5,184 official and 4,896 external presentations.
+
+| Fold 4 measurement | Mixed | External first, then official |
+|---|---:|---:|
+| Recorded training time | 7,749.79 s | 7,733.09 s |
+| Validation inference time | 72.09 s | 75.82 s |
+| Peak GPU memory reserved during training | 13.744 GiB | 13.740 GiB |
+| Peak GPU memory reserved during validation | 13.309 GiB | 13.309 GiB |
+| Maximum monitored Pod-local storage growth | 476 KiB | 348 KiB |
+
+An independent CPU readback compared the exported mixed adapter to the final checkpoint and found all 64,317,440 FP32 values in 561 tensors byte-identical, including the classification head. Prediction values remain sealed for the joint five-fold accuracy comparison.
