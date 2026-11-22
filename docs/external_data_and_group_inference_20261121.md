@@ -35,6 +35,12 @@ Of the errors made by the original E24 + E42 classifier, the two methods correct
 
 These exploratory comparisons favor the label-allocation constraint on this split. Pairwise writing comparisons also contributed. The pairwise model gained 24 correct answers with known same-question partners compared with shuffled partners (BA difference 95% interval +0.004167 to +0.018056). With inferred partners it gained 16 (−0.000463 to +0.015278). Intervals use 20,000 paired resamples of questions with seed 42. The comparison uses the archived model outputs and does not change candidate selection.
 
+### Where soft matching corrected predictions
+
+Most of the gain came from inferred groups in which multiple answers had the same baseline top prediction. Among 1,259 such answers, soft matching corrected 84 errors and introduced 24, accounting for 60 of the 67 net additional correct answers (89.6%). Among 823 answers whose top prediction was unique in their group, it corrected nine and introduced two, a net gain of seven. The other 78 retained their baseline predictions. Across eligible groups, the number of unordered answer pairs sharing a top prediction fell from 1,228 to 866. With known question groups, answers with a repeated baseline top prediction accounted for 76 of the 83 net additional correct answers.
+
+Only two inferred groups combined answers to different questions. They contained 37 answers in total. Four went through soft matching, and all four kept their top prediction. Two independent CPU calculations agreed on these counts. This post hoc analysis describes the frozen out-of-fold predictions on 2,160 development answers. The effect of grouping errors on hidden data remains unknown.
+
 ### Cross-device deployment check
 
 A private offline T4 run encoded 4,000 unlabeled inputs in 578.68 seconds. On the 2,160 development responses, the minimum cosine similarity to the archived 3090 embeddings was 0.998672, below the required 0.999. Pairwise agreement of the inferred groups had F1 values of 0.987747, 1.000000, 1.000000, 0.994287 and 0.999515 across the five folds. Fold 1 fell below the per-fold requirement of 0.99. It shared 3,305 pairs with the reference, added 51 and lost 31.
