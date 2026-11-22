@@ -94,6 +94,10 @@ Before the 96-question cap, 1,100 of 1,129 eligible questions had multiple answe
 
 Each fusion adds 0.25 times the row-standardized SVM scores to the baseline. The matched fusion comparison corrected 22 cases and lost 21. Restricting the external source evidence to raw HTTP records also gained one correct prediction in fusion. Neither data comparison passed the advancement rule. These measurements apply to the SVM training recipe. The comparison of Qwen training schedules is separate.
 
+We also compared the 547 selected external questions with all 150 available reconstructions of the official questions (82,050 pairs). For a blinded review, we took the six highest word unigram/bigram similarities and the six highest character four-gram similarities. The two lists had no pair in common. Two AI reviewers independently judged that each of the 12 pairs asked for a different task. This check covers the closest wording in this sample. Substantial paraphrases elsewhere and errors in the reconstructed questions remain possible.
+
+The verified external sample contained zero responses from `qwen3.8-max`. On its 120 development responses, the expanded standalone SVM identified 49 correctly, down from 60. Across all classes it predicted that label 102 times, down from 146. The other 17 classes gained 28 correct predictions in total, giving the overall net gain of 17. In the fixed E24 + E42 fusion the class retained 64 correct predictions, with one correction and one newly introduced error. The other 17 classes accounted for the single net gain in fusion. These counts describe this training recipe and cannot isolate the effect of missing external examples for one class.
+
 ### How the SVM changes carried through to the ensemble
 
 On the 2,160 development responses, adding external data changed the standalone SVM’s top prediction on 869 responses. Replacing the official-only SVM with the expanded SVM in the fixed ensemble changed 86 predictions. The table pairs the two comparisons response by response. Correctness stays the same when both predictions are correct or when both are wrong.
