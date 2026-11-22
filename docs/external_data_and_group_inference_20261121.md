@@ -22,6 +22,19 @@ Against E24 + E42 alone, automatic soft matching gained 67 correct predictions. 
 
 Using known groups recovered 16 more correct predictions than automatic soft matching, a BA difference of +0.007407. Automatic groups of eligible size covered 2,082 of 2,160 responses. Development questions contain exactly one response per class. The usefulness of this constraint on hidden data depends on its group composition.
 
+### Soft matching versus pairwise differences
+
+On the same automatic groups, soft matching got 39 more responses right than pairwise differences. It corrected 83 of the pairwise model’s errors and lost 44 of its correct answers. Using known question groups increased the net difference to 49. Both comparisons use the frozen predictions on the same 120 development questions.
+
+| Group information | Correct with pairwise differences | Correct with soft matching | BA difference (soft minus pairwise) | Paired 95% interval | Net correct by fold |
+|---|---:|---:|---:|---|---|
+| Inferred from responses | 986 | 1,025 | +0.018056 | [+0.007407, +0.028241] | +14, +7, +6, −2, +14 |
+| Known question identity | 992 | 1,041 | +0.022685 | [+0.011111, +0.034259] | +14, +7, +14, 0, +14 |
+
+Of the errors made by the original E24 + E42 classifier, the two methods corrected 23 in common with inferred groups. Soft matching alone corrected 70 and pairwise differences alone corrected 20. Among originally correct answers, soft matching alone introduced 24 errors, pairwise differences alone introduced 13, and both introduced 2. With known groups, the corresponding correction counts were 29 shared, 87 soft only and 19 pairwise only. The error counts were 30 soft only, 11 pairwise only and 3 shared.
+
+These exploratory comparisons favor the label-allocation constraint on this split. Pairwise writing comparisons also contributed. The pairwise model gained 24 correct answers with known same-question partners compared with shuffled partners (BA difference 95% interval +0.004167 to +0.018056). With inferred partners it gained 16 (−0.000463 to +0.015278). Intervals use 20,000 paired resamples of questions with seed 42. The comparison uses the archived model outputs and does not change candidate selection.
+
 ### Cross-device deployment check
 
 A private offline T4 run encoded 4,000 unlabeled inputs in 578.68 seconds. On the 2,160 development responses, the minimum cosine similarity to the archived 3090 embeddings was 0.998672, below the required 0.999. Pairwise agreement of the inferred groups had F1 values of 0.987747, 1.000000, 1.000000, 0.994287 and 0.999515 across the five folds. Fold 1 fell below the per-fold requirement of 0.99. It shared 3,305 pairs with the reference, added 51 and lost 31.
