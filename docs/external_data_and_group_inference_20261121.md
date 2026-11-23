@@ -196,4 +196,20 @@ Both training orders finished on the same RTX 4090 D. Each processed 1,440,117 t
 | Peak GPU memory reserved during validation | 13.309 GiB | 13.309 GiB |
 | Maximum monitored Pod-local storage growth | 476 KiB | 348 KiB |
 
-An independent CPU readback compared the exported mixed adapter to the final checkpoint and found all 64,317,440 FP32 values in 561 tensors byte-identical, including the classification head. Prediction values remain sealed for the joint five-fold accuracy comparison.
+Independent CPU readback compared each exported adapter with its own final checkpoint. In each arm all 64,317,440 FP32 values in 561 tensors matched byte for byte, including the classification head.
+
+### Fold 5 paired training and validation
+
+Both arms ran on the same RTX 4090 D. Each processed 1,446,840 training tokens, with 1,255 successful optimizer updates and five skipped updates. The mixed and staged runs each matched their respective frozen example order. Their validation files contain the same 432 unique IDs in the official order from 24 held-out development questions and all 18 score columns.
+
+| Fold 5 measurement | Mixed | External first, then official |
+|---|---:|---:|
+| Recorded training time | 7,718.36 s | 7,705.38 s |
+| Validation inference time | 76.14 s | 74.51 s |
+| Peak GPU memory reserved during training | 13.742 GiB | 13.742 GiB |
+| Peak GPU memory reserved during validation | 13.309 GiB | 13.309 GiB |
+| Maximum monitored Pod-local storage growth | 600 KiB | 728 KiB |
+
+The five-run queue recorded successful exits for both fold 5 training workers and both validation workers. Independent readback matched the recorded hashes of the two exported adapters and prediction files. Each arm has a continuous chain of 21 shared checkpoint receipts through its last update.
+
+Seven of ten runs have produced artifacts. Both schedules are present for folds 3–5, and the external-first run is present for fold 2. Fold 1 still lacks both schedules, and fold 2 lacks mixed training. Formal registration of the five-run queue awaits verification against its private run records. The new fold-level scores remain sealed pending the full paired comparison.
