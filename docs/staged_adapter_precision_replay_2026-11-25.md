@@ -18,6 +18,6 @@ The **4,000-row unscored deployment check** completed on two T4 GPUs in **5 h 08
 
 ## Competition submission
 
-On November 25, 2026, Kaggle accepted one hidden-test submission of the staged 14B model with automatic grouping and soft matching. The submitted notebook was Version 1 (373900563). The submissions page showed **Notebook Running**, with the public score pending.
+On November 25, 2026, Kaggle accepted one hidden-test submission of the staged 14B model with automatic grouping and soft matching. The submitted notebook was Version 1 (373900563). On November 26, the submissions list and the submission details both confirmed success and a **public leaderboard score of 0.457**.
 
-The project baseline, E24 + E42, scored **0.452** on the public leaderboard. A separate submission reproducing the original third-party pipeline (371798931) succeeded with **0.684**.
+The staged pipeline improved the public score by **0.005** over E24 + E42 (0.452) and by **0.012** over E24 + E39 (0.445). A separate submission reproducing the original third-party pipeline (371798931) succeeded with **0.684**.
